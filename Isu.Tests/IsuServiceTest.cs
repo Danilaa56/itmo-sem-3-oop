@@ -37,28 +37,17 @@ namespace Isu.Tests
             {
                 var groupName = new GroupName("M3ddd");
             });
-            try
+            Assert.DoesNotThrow(() =>
             {
                 var groupName = new GroupName("M3101");
-                groupName = new GroupName("M3200");
-            }
-            catch (IsuException e)
-            {
-                Assert.Fail();
-            }
+            });
         }
 
         [Test]
         public void AddStudentToGroup_StudentHasGroupAndGroupContainsStudent()
         {
-            Assert.Catch<IsuException>(() =>
-            {
-                _isuService.AddStudent(null, null);
-            });
-            
-            
-            var student = _isuService.AddStudent(_m3200, "Name");
-            Assert.True(_m3200.Students.Contains(student));
+            Student student = _isuService.AddStudent(_m3200, "Name");
+            Assert.True(_m3200.GetStudents().Contains(student));
             Assert.AreEqual(student.Group, _m3200);
         }
 
@@ -66,12 +55,13 @@ namespace Isu.Tests
         public void ReachMaxStudentPerGroup_ThrowException()
         {
             Group testGroup = _isuService.AddGroup(new GroupName("M3311"));
+            for (int i = 0; i < IsuServiceImpl.MaxStudentsInGroupCount; i++)
+            {
+                _isuService.AddStudent(testGroup, "Student" + i);
+            }
             Assert.Catch<IsuException>(() =>
             {
-                for (int i = 0; i <= IsuServiceImpl.MaxStudentsInGroupCount; i++)
-                {
-                    _isuService.AddStudent(testGroup, "Student" + i);
-                }
+                _isuService.AddStudent(testGroup, "Student" + IsuServiceImpl.MaxStudentsInGroupCount);
             });
         }
 
@@ -91,12 +81,12 @@ namespace Isu.Tests
             Group testGroup = _isuService.AddGroup(new GroupName("M3214"));
             
             _m3200.AddStudent(testStudent);
-            Assert.True(_m3200.Students.Contains(testStudent));
-            Assert.True(!testGroup.Students.Contains(testStudent));
+            Assert.True(_m3200.GetStudents().Contains(testStudent));
+            Assert.True(!testGroup.GetStudents().Contains(testStudent));
             
             _isuService.ChangeStudentGroup(testStudent, testGroup);
-            Assert.True(!_m3200.Students.Contains(testStudent));
-            Assert.True(testGroup.Students.Contains(testStudent));
+            Assert.True(!_m3200.GetStudents().Contains(testStudent));
+            Assert.True(testGroup.GetStudents().Contains(testStudent));
         }
     }
 }

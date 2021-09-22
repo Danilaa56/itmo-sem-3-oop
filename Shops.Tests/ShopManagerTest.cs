@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using NUnit.Framework;
+﻿using NUnit.Framework;
 using Shops.Entities;
 using Shops.Entities.List;
 using Shops.Service;

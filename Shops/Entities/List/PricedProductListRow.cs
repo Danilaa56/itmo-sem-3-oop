@@ -16,14 +16,5 @@ namespace Shops.Entities.List
         public string ProductId { get; }
         public decimal Amount { get; }
         public decimal PricePerOne { get; }
-
-        public PricedProductListRow Merge(PricedProductListRow other)
-        {
-            if (other is null)
-                throw new ArgumentNullException(nameof(other));
-            if (!ProductId.Equals(other.ProductId))
-                throw new ArgumentException("Product ids must be equal", nameof(other));
-            return new PricedProductListRow(ProductId, Amount + other.Amount, PricePerOne);
-        }
     }
 }

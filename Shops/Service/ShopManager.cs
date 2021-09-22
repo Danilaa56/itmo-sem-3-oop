@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using Shops.Entities;
 using Shops.Entities.List;
 using Shops.Tools;
@@ -92,14 +91,5 @@ namespace Shops.Service
             person.Money -= price;
             shop.Buy(productList);
         }
-
-        // public decimal HowManyIn(string productId, string shopId)
-        // {
-        //     if (shopId == null)
-        //         throw new ArgumentNullException(nameof(shopId));
-        //     if (!_shops.ContainsKey(shopId))
-        //         throw new ShopException("No shop with such id");
-        //     return _shops[shopId].HowMany(productId);
-        // }
     }
 }

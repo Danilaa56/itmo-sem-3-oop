@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Shops.Entities;
+using Shops.Entities.List;
 using Shops.Tools;
 
 namespace Shops.Service
@@ -9,103 +11,95 @@ namespace Shops.Service
     {
         private readonly Dictionary<string, Shop> _shops = new ();
 
-        public void RegisterShop(string id, string name, string shopAddress)
+        public void RegisterShop(Shop shop)
         {
-            if (id == null)
-                throw new ArgumentNullException(nameof(id));
-            if (name == null)
-                throw new ArgumentNullException(nameof(name));
-            if (shopAddress == null)
-                throw new ArgumentNullException(nameof(shopAddress));
-            if (_shops.ContainsKey(id))
+            if (_shops.ContainsKey(shop.Id))
                 throw new ShopException("Shop with such id already exists");
 
-            _shops[id] = new Shop(id, name, shopAddress);
+            _shops[shop.Id] = shop;
         }
 
-        public bool UnregisterShop(string id)
+        public Shop GetShopById(string shopId)
         {
-            return _shops.Remove(id);
-        }
-
-        public void Deliver(string shopId, List<ProductStack> productStacks)
-        {
-            if (shopId == null)
+            if (shopId is null)
                 throw new ArgumentNullException(nameof(shopId));
-            if (!_shops.ContainsKey(shopId))
-                throw new ShopException("No shop with such id");
-
-            _shops[shopId].Deliver(productStacks);
-        }
-
-        public void SetPriceForProductIn(string productId, string shopId, decimal newPrice)
-        {
-            if (productId == null)
-                throw new ArgumentNullException(nameof(productId));
-            if (shopId == null)
-                throw new ArgumentNullException(nameof(shopId));
-            if (!_shops.ContainsKey(shopId))
-                throw new ShopException("No shop with such id");
-
-            _shops[shopId].SetPriceForProduct(productId, newPrice);
-        }
-
-        public decimal HowMuchDoesItCostIn(Dictionary<string, decimal> productsList, string shopId)
-        {
-            if (shopId == null)
-                throw new ArgumentNullException(nameof(shopId));
-            if (!_shops.ContainsKey(shopId))
-                throw new ShopException("No shop with such id");
-
-            return _shops[shopId].HowMuchDoesItCost(productsList);
-        }
-
-        public bool CanBuyIn(Dictionary<string, decimal> productsList, string shopId, decimal moneyAvailable)
-        {
-            decimal price = HowMuchDoesItCostIn(productsList, shopId);
-            if (price == -1)
-                return false;
-            return price <= moneyAvailable;
-        }
-
-        public string FindShopWithTheLowestPrice(Dictionary<string, decimal> productsList)
-        {
-            decimal lowestSum = -1;
-            Shop foundShop = null;
-            foreach (KeyValuePair<string, Shop> shop in _shops)
+            if (_shops.TryGetValue(shopId, out Shop shop))
             {
-                decimal sum = shop.Value.HowMuchDoesItCost(productsList);
-                if (sum != -1 && (sum < lowestSum || lowestSum == -1))
+                return shop;
+            }
+
+            throw new ShopException("Shop with such id does not exist");
+        }
+
+        public decimal HowMuchDoesItCostIn(ProductList productList, string shopId)
+        {
+            if (_shops.TryGetValue(shopId, out Shop shop))
+            {
+                return shop.HowMuchDoesItCost(productList);
+            }
+
+            throw new ShopException("No shop with such id");
+        }
+
+        public bool CanBuyIn(ProductList productList, string shopId, decimal moneyAvailable)
+        {
+            try
+            {
+                return HowMuchDoesItCostIn(productList, shopId) <= moneyAvailable;
+            }
+            catch (ShopException)
+            {
+                return false;
+            }
+        }
+
+        public Shop FindShopWithTheLowestPrice(ProductList productList)
+        {
+            decimal lowestPrice = -1;
+            Shop bestShop = null;
+            foreach (Shop shop in _shops.Values)
+            {
+                try
                 {
-                    lowestSum = sum;
-                    foundShop = shop.Value;
+                    decimal price = shop.HowMuchDoesItCost(productList);
+                    if (price < lowestPrice || bestShop == null)
+                    {
+                        lowestPrice = price;
+                        bestShop = shop;
+                    }
+                }
+                catch (ShopException)
+                {
                 }
             }
 
-            return foundShop?.Id;
+            return bestShop;
         }
 
-        public bool PersonBuyIn(Person person, Dictionary<string, decimal> productsList, string shopId)
+        public void PersonBuyIn(Person person, Shop shop, ProductList productList)
         {
             if (person == null)
                 throw new ArgumentNullException(nameof(person));
-            decimal sum = HowMuchDoesItCostIn(productsList, shopId);
-            if (sum == -1 || sum > person.Money)
-                return false;
+            if (shop == null)
+                throw new ArgumentNullException(nameof(shop));
+            if (productList == null)
+                throw new ArgumentNullException(nameof(productList));
 
-            if (!_shops[shopId].Buy(productsList))
-                return false;
-            person.Money -= sum;
-            return true;
+            decimal price = shop.HowMuchDoesItCost(productList);
+            if (price > person.Money)
+                throw new ShopException("Person do not have enough money");
+
+            person.Money -= price;
+            shop.Buy(productList);
         }
 
-        public decimal HowManyIn(string productId, string shopId)
-        {
-            if (shopId == null)
-                throw new ArgumentNullException(nameof(shopId));
-            if (!_shops.ContainsKey(shopId))
-                throw new ShopException("No shop with such id");
-            return _shops[shopId].HowMany(productId);
-        }
+        // public decimal HowManyIn(string productId, string shopId)
+        // {
+        //     if (shopId == null)
+        //         throw new ArgumentNullException(nameof(shopId));
+        //     if (!_shops.ContainsKey(shopId))
+        //         throw new ShopException("No shop with such id");
+        //     return _shops[shopId].HowMany(productId);
+        // }
     }
 }

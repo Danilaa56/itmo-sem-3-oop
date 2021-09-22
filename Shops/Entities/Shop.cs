@@ -1,104 +1,124 @@
 ﻿using System;
-using System.Collections.Generic;
+using Shops.Entities.List;
+using Shops.Tools;
 
 namespace Shops.Entities
 {
     public class Shop
     {
-        private readonly Dictionary<string, ProductStack> _productStacks = new ();
+        private PricedProductList _products = new PricedProductList();
 
         public Shop(string id, string name, string address)
         {
-            Id = id;
-            Name = name;
-            Address = address;
+            Id = id ?? throw new ArgumentNullException(nameof(id));
+            Name = name ?? throw new ArgumentNullException(nameof(name));
+            Address = address ?? throw new ArgumentNullException(nameof(address));
         }
 
         public string Id { get; }
         public string Name { get; }
         public string Address { get; }
 
-        public void Deliver(List<ProductStack> productStacks)
+        public void Deliver(PricedProductList list)
         {
-            productStacks?.ForEach(productStack =>
+            _products.Add(list);
+        }
+
+        public void TryChangePriceForProduct(string productId, decimal newPricePerOne)
+        {
+            if (productId is null)
+                throw new ArgumentNullException(nameof(productId));
+            if (newPricePerOne < 0)
+                throw new ArgumentException("Price cannot be negative", nameof(newPricePerOne));
+            if (_products.TryGetValue(productId, out PricedProductListRow productInfo))
             {
-                if (_productStacks.ContainsKey(productStack.Id))
+                _products.Put(new PricedProductListRow(productId, productInfo.Amount, newPricePerOne));
+            }
+        }
+
+        public decimal HowMuchDoesItCost(ProductList productList)
+        {
+            if (productList == null)
+                throw new ArgumentNullException(nameof(productList));
+            decimal sum = 0;
+
+            productList.GetRows().ForEach(row =>
+            {
+                if (_products.TryGetValue(row.ProductId, out PricedProductListRow existingRow))
                 {
-                    _productStacks[productStack.Id] = new ProductStack(
-                        productStack.Id,
-                        _productStacks[productStack.Id].Count + productStack.Count,
-                        _productStacks[productStack.Id].PricePerOne);
+                    if (existingRow.Amount < row.Amount)
+                    {
+                        throw new ShopException(
+                            $"There is no such amount of product {row.ProductId} in the shop '{Id}'");
+                    }
+
+                    sum += existingRow.PricePerOne * row.Amount;
                 }
                 else
                 {
-                    _productStacks[productStack.Id] = productStack;
+                    throw new ShopException($"There is no such product {row.ProductId} in the shop '{Id}'");
                 }
             });
-        }
-
-        public void SetPriceForProduct(string productId, decimal newPricePerOne)
-        {
-            if (_productStacks.ContainsKey(productId))
-            {
-                var productStack = new ProductStack(productId, _productStacks[productId].Count, newPricePerOne);
-                _productStacks[productId] = productStack;
-            }
-        }
-
-        public decimal HowMuchDoesItCost(Dictionary<string, decimal> productsList)
-        {
-            if (productsList == null)
-                throw new ArgumentNullException(nameof(productsList));
-            decimal sum = 0;
-            foreach (KeyValuePair<string, decimal> product in productsList)
-            {
-                if (!_productStacks.ContainsKey(product.Key))
-                    return -1;
-                if (_productStacks[product.Key].Count < product.Value)
-                    return -1;
-                sum += product.Value * _productStacks[product.Key].PricePerOne;
-            }
 
             return sum;
         }
 
-        public bool Buy(Dictionary<string, decimal> productsList)
+        public void Buy(ProductList productList)
         {
-            if (productsList == null)
-                throw new ArgumentNullException(nameof(productsList));
-            foreach (KeyValuePair<string, decimal> product in productsList)
+            if (productList == null)
+                throw new ArgumentNullException(nameof(productList));
+            foreach (var productInfo in productList.GetRows())
             {
-                if (!_productStacks.ContainsKey(product.Key))
-                    return false;
-                if (_productStacks[product.Key].Count < product.Value)
-                    return false;
-            }
-
-            foreach (KeyValuePair<string, decimal> product in productsList)
-            {
-                if (_productStacks[product.Key].Count == product.Value)
+                if (_products.TryGetValue(productInfo.ProductId, out PricedProductListRow existingProduct))
                 {
-                    _productStacks.Remove(product.Key);
+                    if (existingProduct.Amount < productInfo.Amount)
+                        throw new ShopException("There is no such amount of product in shop");
                 }
                 else
                 {
-                    _productStacks[product.Key] = new ProductStack(
-                        product.Key,
-                        _productStacks[product.Key].Count - product.Value,
-                        _productStacks[product.Key].PricePerOne);
+                    throw new ShopException("There is no such product in shop");
                 }
             }
 
-            return true;
+            foreach (var productInfo in productList.GetRows())
+            {
+                _products.TryGetValue(productInfo.ProductId, out PricedProductListRow existingProduct);
+                if (existingProduct.Amount == productInfo.Amount)
+                {
+                    _products.TryRemove(existingProduct.ProductId);
+                }
+                else
+                {
+                    _products.Put(new PricedProductListRow(
+                        existingProduct.ProductId,
+                        existingProduct.Amount - productInfo.Amount,
+                        existingProduct.PricePerOne));
+                }
+            }
         }
 
-        public decimal HowMany(string productId)
+        public decimal GetProductAmount(string productId)
         {
             if (productId == null)
                 throw new ArgumentNullException(nameof(productId));
-            if (_productStacks.ContainsKey(productId))
-                return _productStacks[productId].Count;
+            if (_products.TryGetValue(productId, out PricedProductListRow productInfo))
+            {
+                return productInfo.Amount;
+            }
+
             return 0;
+        }
+
+        public decimal GetProductPrice(string productId)
+        {
+            if (productId == null)
+                throw new ArgumentNullException(nameof(productId));
+            if (_products.TryGetValue(productId, out PricedProductListRow productInfo))
+            {
+                return productInfo.PricePerOne;
+            }
+
+            throw new ShopException("There is no product with such id int this shop");
         }
     }
 }

@@ -6,7 +6,7 @@ namespace Shops.Entities.List
 {
     public abstract class AbstractProductList<TRowType>
     {
-        private readonly Dictionary<string, TRowType> _list = new ();
+        private readonly Dictionary<string, TRowType> _list = new Dictionary<string, TRowType>();
 
         public void Add(AbstractProductList<TRowType> list)
         {
@@ -36,6 +36,11 @@ namespace Shops.Entities.List
         public ImmutableList<TRowType> GetRows()
         {
             return _list.Values.ToImmutableList();
+        }
+
+        public void Clear()
+        {
+            _list.Clear();
         }
 
         protected abstract string GetRowId(TRowType row);

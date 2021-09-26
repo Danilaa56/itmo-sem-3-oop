@@ -44,20 +44,19 @@ namespace Shops.Entities
 
             productList.GetRows().ForEach(row =>
             {
-                if (_products.TryGetValue(row.ProductId, out PricedProductListRow existingRow))
-                {
-                    if (existingRow.Amount < row.Amount)
-                    {
-                        throw new ShopException(
-                            $"There is no such amount of product {row.ProductId} in the shop '{Id}'");
-                    }
-
-                    sum += existingRow.PricePerOne * row.Amount;
-                }
-                else
+                PricedProductListRow existingRow;
+                if (!_products.TryGetValue(row.ProductId, out existingRow))
                 {
                     throw new ShopException($"There is no such product {row.ProductId} in the shop '{Id}'");
                 }
+
+                if (existingRow.Amount < row.Amount)
+                {
+                    throw new ShopException(
+                        $"There is no such amount of product {row.ProductId} in the shop '{Id}'");
+                }
+
+                sum += existingRow.PricePerOne * row.Amount;
             });
 
             return sum;

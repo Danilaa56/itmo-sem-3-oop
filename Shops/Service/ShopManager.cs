@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using Shops.Entities;
 using Shops.Entities.List;
 using Shops.Tools;
@@ -8,7 +9,7 @@ namespace Shops.Service
 {
     public class ShopManager
     {
-        private readonly Dictionary<string, Shop> _shops = new ();
+        private readonly Dictionary<string, Shop> _shops = new Dictionary<string, Shop>();
 
         public void RegisterShop(Shop shop)
         {
@@ -16,6 +17,17 @@ namespace Shops.Service
                 throw new ShopException("Shop with such id already exists");
 
             _shops[shop.Id] = shop;
+        }
+
+        public void UnregisterShop(string shopId)
+        {
+            if (!_shops.Remove(shopId))
+                throw new ShopException("There is no shop with such id");
+        }
+
+        public ImmutableList<Shop> GetShops()
+        {
+            return _shops.Values.ToImmutableList();
         }
 
         public Shop GetShopById(string shopId)
@@ -52,10 +64,10 @@ namespace Shops.Service
             }
         }
 
-        public Shop FindShopWithTheLowestPrice(ProductList productList)
+        public decimal FindShopWithTheLowestPrice(ProductList productList, out Shop bestShop)
         {
+            bestShop = null;
             decimal lowestPrice = -1;
-            Shop bestShop = null;
             foreach (Shop shop in _shops.Values)
             {
                 try
@@ -72,7 +84,7 @@ namespace Shops.Service
                 }
             }
 
-            return bestShop;
+            return lowestPrice;
         }
 
         public void PersonBuyIn(Person person, Shop shop, ProductList productList)

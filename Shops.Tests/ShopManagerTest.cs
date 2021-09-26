@@ -79,10 +79,12 @@ namespace Shops.Tests
                 .Add("rice", riceAmount)
                 .Add("oat", oatAmount);
 
+            _manager.FindShopWithTheLowestPrice(productsToBuy, out Shop foundShop);
+            
             if(lowestShop == null)
-                Assert.AreEqual(lowestShop, _manager.FindShopWithTheLowestPrice(productsToBuy));
+                Assert.AreEqual(lowestShop, foundShop);
             else
-                Assert.AreEqual(lowestShop, _manager.FindShopWithTheLowestPrice(productsToBuy).Id);
+                Assert.AreEqual(lowestShop, foundShop.Id);
         }
 
         [TestCase(10, 0.5, 1, 1, true)]
@@ -98,7 +100,7 @@ namespace Shops.Tests
                 .Add("shrimp", 2, 7.5M)
             );
 
-            var person = new Person("Vanya");
+            var person = new Person("311000", "Vanya");
             person.Money = moneyBefore;
 
             var productsToBuy = new ProductList()

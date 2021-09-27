@@ -7,7 +7,7 @@ namespace Shops.Commands
     public class DeliveryListCommand : Command
     {
         private Context _context;
-        private CommandResponse _usage = Response("deliverylsit <clear|show|buy|person>");
+        private CommandResponse _usage = Response("deliverylsit <clear|show|add|deliver>");
 
         public DeliveryListCommand(Context context)
         {
@@ -21,26 +21,19 @@ namespace Shops.Commands
                 return _usage;
             }
 
-            try
+            switch (args[1].ToLower())
             {
-                switch (args[1].ToLower())
-                {
-                    case "clear":
-                        return Clear();
-                    case "show":
-                        return Show();
-                    case "add":
-                        return Add(args);
-                    case "deliver":
-                        return Deliver(args);
-                }
+                case "clear":
+                    return Clear();
+                case "show":
+                    return Show();
+                case "add":
+                    return Add(args);
+                case "deliver":
+                    return Deliver(args);
+                default:
+                    return _usage;
             }
-            catch (Exception e)
-            {
-                return Response(e.Message);
-            }
-
-            return _usage;
         }
 
         private CommandResponse Clear()

@@ -23,24 +23,17 @@ namespace Shops.Commands
                 return _usage;
             }
 
-            try
+            switch (args[1].ToLower())
             {
-                switch (args[1].ToLower())
-                {
-                    case "create":
-                        return Create(args);
-                    case "destroy":
-                        return Destroy(args);
-                    case "list":
-                        return List(args);
-                }
+                case "create":
+                    return Create(args);
+                case "destroy":
+                    return Destroy(args);
+                case "list":
+                    return List(args);
+                default:
+                    return _usage;
             }
-            catch (ShopException e)
-            {
-                return Response(e.Message);
-            }
-
-            return _usage;
         }
 
         private CommandResponse Create(string[] args)

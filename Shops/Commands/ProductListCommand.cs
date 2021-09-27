@@ -21,28 +21,21 @@ namespace Shops.Commands
                 return _usage;
             }
 
-            try
+            switch (args[1].ToLower())
             {
-                switch (args[1].ToLower())
-                {
-                    case "clear":
-                        return Clear();
-                    case "show":
-                        return Show();
-                    case "add":
-                        return Add(args);
-                    case "lowestprice":
-                        return LowestPrice();
-                    case "buy":
-                        return Buy(args);
-                }
+                case "clear":
+                    return Clear();
+                case "show":
+                    return Show();
+                case "add":
+                    return Add(args);
+                case "lowestprice":
+                    return LowestPrice();
+                case "buy":
+                    return Buy(args);
+                default:
+                    return _usage;
             }
-            catch (ShopException e)
-            {
-                return Response(e.Message);
-            }
-
-            return _usage;
         }
 
         private CommandResponse Clear()

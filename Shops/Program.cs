@@ -25,11 +25,18 @@ namespace Shops
                 string commandName = args[0].ToLower();
                 if (_commands.TryGetValue(commandName, out Command command))
                 {
-                    CommandResponse response = command.ProcCommand(args);
-                    foreach (string responseLine in response.Lines)
-                        Console.WriteLine(responseLine);
-                    if (response.ShouldExit)
-                        break;
+                    try
+                    {
+                        CommandResponse response = command.ProcCommand(args);
+                        foreach (string responseLine in response.Lines)
+                            Console.WriteLine(responseLine);
+                        if (response.ShouldExit)
+                            break;
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e.Message);
+                    }
                 }
                 else
                 {

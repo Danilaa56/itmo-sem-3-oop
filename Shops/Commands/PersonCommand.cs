@@ -22,26 +22,19 @@ namespace Shops.Commands
                 return _usage;
             }
 
-            try
+            switch (args[1].ToLower())
             {
-                switch (args[1].ToLower())
-                {
-                    case "create":
-                        return Create(args);
-                    case "destroy":
-                        return Destroy(args);
-                    case "list":
-                        return List(args);
-                    case "money":
-                        return Money(args);
-                }
+                case "create":
+                    return Create(args);
+                case "destroy":
+                    return Destroy(args);
+                case "list":
+                    return List(args);
+                case "money":
+                    return Money(args);
+                default:
+                    return _usage;
             }
-            catch (ShopException e)
-            {
-                return Response(e.Message);
-            }
-
-            return _usage;
         }
 
         private CommandResponse Create(string[] args)
@@ -70,7 +63,7 @@ namespace Shops.Commands
             ImmutableList<Person> people = _context.PeopleRegistry.GetPeople();
             return Response(
                 people.ConvertAll(person => person.Id + "\t" + person.Name + "\t" + person.Money)
-                .Insert(0, "People count: " + people.Count).ToArray());
+                    .Insert(0, "People count: " + people.Count).ToArray());
         }
 
         private CommandResponse Money(string[] args)

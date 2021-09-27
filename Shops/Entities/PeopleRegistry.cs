@@ -20,7 +20,7 @@ namespace Shops.Entities
 
         public void Unregister(string id)
         {
-            if (people.Remove(id))
+            if (!people.Remove(id))
             {
                 throw new ShopException("There is no person with such id");
             }

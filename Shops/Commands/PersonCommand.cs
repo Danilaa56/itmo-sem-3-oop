@@ -8,14 +8,14 @@ namespace Shops.Commands
     public class PersonCommand : Command
     {
         private Context _context;
-        private string[] _usage = Response("person <create|destroy|list|money>");
+        private CommandResponse _usage = Response("person <create|destroy|list|money>");
 
         public PersonCommand(Context context)
         {
             _context = context;
         }
 
-        public override string[] ProcCommand(string[] args)
+        public override CommandResponse ProcCommand(string[] args)
         {
             if (args.Length == 1)
             {
@@ -44,7 +44,7 @@ namespace Shops.Commands
             return _usage;
         }
 
-        private string[] Create(string[] args)
+        private CommandResponse Create(string[] args)
         {
             if (args.Length < 4 || args.Length > 5)
                 return Response("person create PERSON_ID PERSON_NAME [MONEY]");
@@ -56,7 +56,7 @@ namespace Shops.Commands
             return Response("Person was created");
         }
 
-        private string[] Destroy(string[] args)
+        private CommandResponse Destroy(string[] args)
         {
             if (args.Length != 3)
                 return Response("shop destroy PERSON_ID");
@@ -65,14 +65,15 @@ namespace Shops.Commands
             return Response($"Person '{args[2]}' was destroyed");
         }
 
-        private string[] List(string[] args)
+        private CommandResponse List(string[] args)
         {
             ImmutableList<Person> people = _context.PeopleRegistry.GetPeople();
-            return people.ConvertAll(person => person.Id + "\t" + person.Name + "\t" + person.Money)
-                .Insert(0, "People count: " + people.Count).ToArray();
+            return Response(
+                people.ConvertAll(person => person.Id + "\t" + person.Name + "\t" + person.Money)
+                .Insert(0, "People count: " + people.Count).ToArray());
         }
 
-        private string[] Money(string[] args)
+        private CommandResponse Money(string[] args)
         {
             if (args.Length == 2)
                 return Response("person money <get|set>");

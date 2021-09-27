@@ -7,14 +7,14 @@ namespace Shops.Commands
     public class ProductListCommand : Command
     {
         private Context _context;
-        private string[] _usage = Response("productlist <clear|show|add|lowestprice|buy>");
+        private CommandResponse _usage = Response("productlist <clear|show|add|lowestprice|buy>");
 
         public ProductListCommand(Context context)
         {
             _context = context;
         }
 
-        public override string[] ProcCommand(string[] args)
+        public override CommandResponse ProcCommand(string[] args)
         {
             if (args.Length == 1)
             {
@@ -45,30 +45,30 @@ namespace Shops.Commands
             return _usage;
         }
 
-        private string[] Clear()
+        private CommandResponse Clear()
         {
             _context.ProductList.Clear();
             return Response("Product list was cleared");
         }
 
-        private string[] Show()
+        private CommandResponse Show()
         {
             var rows = _context.ProductList.GetRows();
-            return rows.ConvertAll(row => row.ProductId + "\t" + row.Amount)
-                .Insert(0, "Different product types count: " + rows.Count).ToArray();
+            return Response(
+                rows.ConvertAll(row => row.ProductId + "\t" + row.Amount)
+                    .Insert(0, "Different product types count: " + rows.Count).ToArray());
         }
 
-        private string[] LowestPrice()
+        private CommandResponse LowestPrice()
         {
-            decimal lowestPrice;
-            if ((lowestPrice = _context.ShopManager.FindShopWithTheLowestPrice(_context.ProductList, out Shop shop)) ==
-                -1)
+            decimal lowestPrice = _context.ShopManager.FindShopWithTheLowestPrice(_context.ProductList, out Shop shop);
+            if (lowestPrice == -1)
                 return Response("There is no shop with such products");
 
             return Response($"Lowest price of the list is {lowestPrice} in the '{shop.Name}' ('{shop.Id}')");
         }
 
-        private string[] Add(string[] args)
+        private CommandResponse Add(string[] args)
         {
             if (args.Length != 4)
                 return Response("productlist add PRODUCT_ID PRODUCT_AMOUNT");
@@ -77,7 +77,7 @@ namespace Shops.Commands
             return Response("Product was added to the list");
         }
 
-        private string[] Buy(string[] args)
+        private CommandResponse Buy(string[] args)
         {
             if (args.Length != 4)
                 return Response("productlist buy PERSON_WHO_BUYS_ID SHOP_WHERE_BUYS_ID");

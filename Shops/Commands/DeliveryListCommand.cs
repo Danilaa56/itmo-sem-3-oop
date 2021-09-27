@@ -7,14 +7,14 @@ namespace Shops.Commands
     public class DeliveryListCommand : Command
     {
         private Context _context;
-        private string[] _usage = Response("deliverylsit <clear|show|buy|person>");
+        private CommandResponse _usage = Response("deliverylsit <clear|show|buy|person>");
 
         public DeliveryListCommand(Context context)
         {
             _context = context;
         }
 
-        public override string[] ProcCommand(string[] args)
+        public override CommandResponse ProcCommand(string[] args)
         {
             if (args.Length == 1)
             {
@@ -43,20 +43,20 @@ namespace Shops.Commands
             return _usage;
         }
 
-        private string[] Clear()
+        private CommandResponse Clear()
         {
             _context.DeliveryList.Clear();
             return Response("Delivery list was cleared");
         }
 
-        private string[] Show()
+        private CommandResponse Show()
         {
             var rows = _context.DeliveryList.GetRows();
-            return rows.ConvertAll(row => row.ProductId + "\t" + row.Amount + "\t" + row.PricePerOne)
-                .Insert(0, "Different product types count: " + rows.Count).ToArray();
+            return Response(rows.ConvertAll(row => row.ProductId + "\t" + row.Amount + "\t" + row.PricePerOne)
+                .Insert(0, "Different product types count: " + rows.Count).ToArray());
         }
 
-        private string[] Add(string[] args)
+        private CommandResponse Add(string[] args)
         {
             if (args.Length != 5)
                 return Response("deliverylist add PRODUCT_ID PRODUCT_AMOUNT PRICE_PER_ONE");
@@ -65,7 +65,7 @@ namespace Shops.Commands
             return Response("Product was added to the list");
         }
 
-        private string[] Deliver(string[] args)
+        private CommandResponse Deliver(string[] args)
         {
             if (args.Length != 3)
                 return Response("deliverylist deliver SHOP_ID");

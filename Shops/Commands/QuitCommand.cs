@@ -2,10 +2,9 @@
 {
     public class QuitCommand : Command
     {
-        public override string[] ProcCommand(string[] args)
+        public override CommandResponse ProcCommand(string[] args)
         {
-            System.Environment.Exit(0);
-            return Response("ok");
+            return Response(true);
         }
     }
 }

@@ -9,14 +9,14 @@ namespace Shops.Commands
     public class ShopCommand : Command
     {
         private ShopManager _manager;
-        private string[] _usage = Response("shop <create|destroy|list>");
+        private CommandResponse _usage = Response("shop <create|destroy|list>");
 
         public ShopCommand(Context context)
         {
             _manager = context.ShopManager;
         }
 
-        public override string[] ProcCommand(string[] args)
+        public override CommandResponse ProcCommand(string[] args)
         {
             if (args.Length == 1)
             {
@@ -43,7 +43,7 @@ namespace Shops.Commands
             return _usage;
         }
 
-        private string[] Create(string[] args)
+        private CommandResponse Create(string[] args)
         {
             if (args.Length != 5)
                 return Response("shop create SHOP_ID SHOP_NAME SHOP_ADDRESS");
@@ -53,7 +53,7 @@ namespace Shops.Commands
             return Response("Shop was created");
         }
 
-        private string[] Destroy(string[] args)
+        private CommandResponse Destroy(string[] args)
         {
             if (args.Length != 3)
                 return Response("shop create SHOP_ID");
@@ -62,11 +62,12 @@ namespace Shops.Commands
             return Response($"Shop '{args[2]}' was destroyed");
         }
 
-        private string[] List(string[] args)
+        private CommandResponse List(string[] args)
         {
             ImmutableList<Shop> shops = _manager.GetShops();
-            return shops.ConvertAll(shop => shop.Id + "\t" + shop.Name + "\t" + shop.Address)
-                .Insert(0, "Shops count: " + shops.Count).ToArray();
+            return Response(
+                shops.ConvertAll(shop => shop.Id + "\t" + shop.Name + "\t" + shop.Address)
+                .Insert(0, "Shops count: " + shops.Count).ToArray());
         }
     }
 }

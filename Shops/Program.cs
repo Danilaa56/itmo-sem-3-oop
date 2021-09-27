@@ -25,9 +25,11 @@ namespace Shops
                 string commandName = args[0].ToLower();
                 if (_commands.TryGetValue(commandName, out Command command))
                 {
-                    string[] response = command.ProcCommand(args);
-                    foreach (string responseLine in response)
+                    CommandResponse response = command.ProcCommand(args);
+                    foreach (string responseLine in response.Lines)
                         Console.WriteLine(responseLine);
+                    if (response.ShouldExit)
+                        break;
                 }
                 else
                 {
@@ -76,35 +78,6 @@ namespace Shops
             if (cacheIndex != 0)
                 list.Add(new string(charsCache, 0, cacheIndex));
 
-            // //
-            // // // bool insideQuotes = false;
-            // // int i = 0;
-            // // while (chars[i] == ' ' && i < chars.Length)
-            // //     i++;
-            // // argStart = i;
-            //
-            // for (; i < chars.Length; i++)
-            // {
-            //     char c = chars[i];
-            //     if (c == ' ')
-            //     {
-            //         list.Add(line.Substring(argStart, i - argStart));
-            //         while (chars[i] == ' ' && i < chars.Length)
-            //             i++;
-            //         argStart = i;
-            //     }
-            //     else if (c == '"')
-            //     {
-            //         int firstQuot = i;
-            //         i++;
-            //         while (chars[i] != '"' && i < chars.Length)
-            //             i++;
-            //         list.Add(line.Substring(firstQuot + 1, i - firstQuot - 1));
-            //         while (chars[i] == ' ' && i < chars.Length)
-            //             i++;
-            //         argStart = i;
-            //     }
-            // }
             return list.ToArray();
         }
     }

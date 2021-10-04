@@ -19,20 +19,16 @@ namespace IsuExtra.Services
         private Dictionary<Student, List<ExtraCourse>> _studentExtraCourses =
             new Dictionary<Student, List<ExtraCourse>>();
 
-        public ExtraIsuServiceImpl(int maxExtraCoursesCount = 2)
-            : base()
-        {
-            MaxExtraCoursesCount = maxExtraCoursesCount;
-        }
+        private int _maxExtraCoursesCount = 2;
 
         public int MaxExtraCoursesCount
         {
-            get => MaxStudentsInGroupCount;
+            get => _maxExtraCoursesCount;
             set
             {
                 if (value < 0)
                     throw new ArgumentException("Count of extra courses cannot be negative", nameof(value));
-                MaxExtraCoursesCount = value;
+                _maxExtraCoursesCount = value;
             }
         }
 

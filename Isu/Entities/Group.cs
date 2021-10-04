@@ -1,27 +1,14 @@
-﻿using System.Collections.Generic;
-using System.Collections.Immutable;
-
-namespace Isu.Entities
+﻿namespace Isu.Entities
 {
-    public class Group
+    public class Group : StudentsGroup
     {
-        private HashSet<Student> _students = new HashSet<Student>();
-        public Group(GroupName groupName)
+        public Group(GroupName groupName, int sizeLimit)
+            : base(sizeLimit)
         {
             GroupName = groupName;
         }
 
         public GroupName GroupName { get; }
-
-        public void AddStudent(Student student)
-        {
-            _students.Add(student);
-        }
-
-        public void KickStudent(Student student)
-        {
-            _students.Remove(student);
-        }
 
         public override int GetHashCode()
         {
@@ -34,9 +21,9 @@ namespace Isu.Entities
             return (CourseNumber)(c - '0');
         }
 
-        public ImmutableHashSet<Student> GetStudents()
+        public override string GetName()
         {
-            return _students.ToImmutableHashSet();
+            return GroupName.StringName;
         }
     }
 }

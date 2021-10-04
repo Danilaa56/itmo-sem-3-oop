@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Isu.Entities
+﻿namespace Isu.Entities
 {
     public class Student
     {

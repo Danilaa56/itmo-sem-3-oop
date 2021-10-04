@@ -7,7 +7,7 @@ namespace Isu.Entities
     {
         public GroupName(string stringName)
         {
-            if (!Regex.IsMatch(stringName, "^M3[1234][0-9]{2,2}$"))
+            if (!Regex.IsMatch(stringName, "^[A-Z][1-4][1-4][0-9]{2,3}[c]*$"))
             {
                 throw new IsuException($"Illegal group name: {stringName}");
             }

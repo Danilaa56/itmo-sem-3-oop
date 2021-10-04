@@ -80,7 +80,6 @@ namespace Isu.Tests
             Student testStudent = _isuService.AddStudent(_m3200, "transferTestStudent");
             Group testGroup = _isuService.AddGroup(new GroupName("M3214"));
             
-            _m3200.AddStudent(testStudent);
             Assert.True(_m3200.GetStudents().Contains(testStudent));
             Assert.True(!testGroup.GetStudents().Contains(testStudent));
             

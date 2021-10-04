@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
 using Isu.Entities;
 using Isu.Tools;
@@ -22,7 +21,7 @@ namespace Isu.Services
                 throw new IsuException("Group with such name already exists");
             }
 
-            var group = new Group(name);
+            var group = new Group(name, MaxStudentsInGroupCount);
             _groups[name] = group;
             return group;
         }

@@ -4,8 +4,8 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp5.0</TargetFramework>
     <LangVersion>preview</LangVersion>
-    <WarningLevel>5</WarningLevel>
-    <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
+<!--    <WarningLevel>5</WarningLevel>-->
+<!--    <TreatWarningsAsErrors>True</TreatWarningsAsErrors>-->
   </PropertyGroup>
 
   <ItemGroup>
@@ -21,6 +21,10 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Test\Repo" />
   </ItemGroup>
 
 </Project>

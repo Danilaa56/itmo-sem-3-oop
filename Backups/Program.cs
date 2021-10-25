@@ -11,29 +11,26 @@ namespace Backups
         private static void Main(string[] args)
         {
             string path = args[0];
-            var repo = new RepositoryLocal(args[1]);
+            // var repo = new RepositoryLocal(args[1]);
+            var repo = new RepositoryRemote("localhost", 8080);
 
             if (path.Length == 0 || path[path.Length - 1] != '/')
                 path += '/';
 
             var backupJob = new BackupJob(repo);
-            backupJob.SetStorageType(StorageType.SPLIT_STORAGES);
+            backupJob.SetStorageType(StorageType.SplitStorages);
 
             var jobObject1 = new JobObject(path, "File 1.txt");
             var jobObject2 = new JobObject(path, "File 2.txt");
 
             backupJob.Add(jobObject1);
             backupJob.Add(jobObject2);
-            var restore1 = backupJob.CreateRestorePoint();
+            RestorePoint restore1 = backupJob.CreateRestorePoint();
             Console.WriteLine(restore1);
 
             backupJob.Remove(jobObject1);
-            var restore2 = backupJob.CreateRestorePoint();
-        }
-
-        public static void PrintLn(object obj)
-        {
-            Console.WriteLine(obj);
+            RestorePoint restore2 = backupJob.CreateRestorePoint();
+            Console.WriteLine(restore2);
         }
 
         public static List<FileInfo> GetFiles(DirectoryInfo dirInfo)

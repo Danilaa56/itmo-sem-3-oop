@@ -11,12 +11,12 @@ namespace Backups.Entities
             FileName = fileName ?? throw new ArgumentNullException(nameof(fileName));
         }
 
+        public string FileName { get; }
+        public string RootPath { get; }
+
         public byte[] GetData()
         {
             return File.ReadAllBytes(RootPath + "/" + FileName);
         }
-
-        public string FileName { get; }
-        public string RootPath { get; }
     }
 }

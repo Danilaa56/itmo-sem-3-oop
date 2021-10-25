@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
 using System.IO.Compression;
 using Backups.Tools;
@@ -8,24 +9,26 @@ namespace Backups.Entities
 {
     public class BackupJob
     {
-        private readonly HashSet<JobObject> files = new HashSet<JobObject>();
-        private StorageType activeStorageType = StorageType.SINGLE_STORAGE;
-        private Repository repository;
+        private readonly HashSet<JobObject> _files = new HashSet<JobObject>();
+        private readonly Repository _repository;
+        private readonly List<RestorePoint> _restorePoints = new List<RestorePoint>();
+        private StorageType _activeStorageType;
 
-        public BackupJob(Repository repository)
+        public BackupJob(Repository repository, StorageType storageType = StorageType.SingleStorage)
         {
-            this.repository = repository ?? throw new ArgumentNullException(nameof(repository));
+            _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+            _activeStorageType = storageType;
         }
 
         public void Add(JobObject jobObject)
         {
-            if (!files.Add(jobObject ?? throw new ArgumentNullException(nameof(jobObject))))
+            if (!_files.Add(jobObject ?? throw new ArgumentNullException(nameof(jobObject))))
                 throw new ArgumentException("This object is already added");
         }
 
         public void Remove(JobObject jobObject)
         {
-            if (!files.Remove(jobObject ?? throw new ArgumentNullException(nameof(jobObject))))
+            if (!_files.Remove(jobObject ?? throw new ArgumentNullException(nameof(jobObject))))
                 throw new ArgumentException("There is no such object in this Job");
         }
 
@@ -35,12 +38,18 @@ namespace Backups.Entities
 
             HashSet<string> storages = StoragesFromJobObjects();
             var restorePoint = new RestorePoint(date, storages);
+            _restorePoints.Add(restorePoint);
             return restorePoint;
+        }
+
+        public ImmutableList<RestorePoint> GetRestorePoints()
+        {
+            return _restorePoints.ToImmutableList();
         }
 
         public void SetStorageType(StorageType storageType)
         {
-            activeStorageType = storageType;
+            _activeStorageType = storageType;
         }
 
         private HashSet<string> StoragesFromJobObjects()
@@ -48,43 +57,45 @@ namespace Backups.Entities
             var storageIds = new HashSet<string>();
 
             var filesInfo = new Dictionary<string, byte[]>();
-            switch (activeStorageType)
+            switch (_activeStorageType)
             {
-                case StorageType.SPLIT_STORAGES:
-                    foreach (var jobObject in files)
+                case StorageType.SplitStorages:
+                    foreach (JobObject jobObject in _files)
                     {
                         filesInfo.Clear();
                         filesInfo[jobObject.FileName] = jobObject.GetData();
-                        storageIds.Add(repository.CreateStorage(zip(filesInfo)));
+                        storageIds.Add(_repository.CreateStorage(Zip(filesInfo)));
                     }
 
                     break;
-                case StorageType.SINGLE_STORAGE:
+                case StorageType.SingleStorage:
                     filesInfo.Clear();
-                    foreach (var jobObject in files)
+                    foreach (JobObject jobObject in _files)
                     {
                         filesInfo[jobObject.FileName] = jobObject.GetData();
                     }
 
-                    storageIds.Add(repository.CreateStorage(zip(filesInfo)));
+                    storageIds.Add(_repository.CreateStorage(Zip(filesInfo)));
                     break;
             }
 
             return storageIds;
         }
 
-        private byte[] zip(Dictionary<string, byte[]> filesInfo)
+        private static byte[] Zip(Dictionary<string, byte[]> filesInfo)
         {
             using var ms = new MemoryStream();
-            using var archive = new ZipArchive(ms, ZipArchiveMode.Update);
-            foreach (var fileInfo in filesInfo)
             {
-                ZipArchiveEntry orderEntry = archive.CreateEntry("/" + fileInfo.Key);
-                using var writer = new BinaryWriter(orderEntry.Open());
-                writer.Write(fileInfo.Value);
+                using var archive = new ZipArchive(ms, ZipArchiveMode.Update);
+                {
+                    foreach (var fileInfo in filesInfo)
+                    {
+                        ZipArchiveEntry orderEntry = archive.CreateEntry(fileInfo.Key);
+                        using var writer = new BinaryWriter(orderEntry.Open());
+                        writer.Write(fileInfo.Value);
+                    }
+                }
             }
-
-            archive.Dispose();
 
             return ms.ToArray();
         }

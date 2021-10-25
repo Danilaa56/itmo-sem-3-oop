@@ -5,15 +5,15 @@ namespace Backups.Entities
 {
     public abstract class Repository
     {
+        private const string Hex = "0123456789abcdef";
+        private readonly Random _random = new Random();
 
         public abstract string CreateStorage(byte[] data);
 
-        private const string hex = "0123456789abcdef";
-        private readonly Random random = new Random();
-        protected string randomHexString(int length)
+        protected string RandomHexString(int length)
         {
-            return new string(Enumerable.Repeat(hex, length)
-                .Select(s => s[random.Next(s.Length)]).ToArray());
+            return new string(Enumerable.Repeat(Hex, length)
+                .Select(s => s[_random.Next(s.Length)]).ToArray());
         }
     }
 }

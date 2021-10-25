@@ -7,18 +7,18 @@ namespace Backups.Entities
 {
     public class RestorePoint
     {
-        public long creationDateUtc { get; }
-        public ImmutableArray<string> storageIds { get; }
-
         public RestorePoint(long creationDateUtc, HashSet<string> storageIds)
         {
-            this.creationDateUtc = creationDateUtc;
+            CreationDateUtc = creationDateUtc;
             if (storageIds is null) throw new ArgumentNullException(nameof(storageIds));
-            this.storageIds = storageIds.ToImmutableArray();
+            StorageIds = storageIds.ToImmutableArray();
         }
 
+        public long CreationDateUtc { get; }
+        public ImmutableArray<string> StorageIds { get; }
+
         public override string ToString()
-        {;
+        {
             return JsonSerializer.Serialize(this);
         }
     }

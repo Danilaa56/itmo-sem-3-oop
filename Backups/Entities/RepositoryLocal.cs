@@ -35,7 +35,7 @@ namespace Backups.Entities
             string fullName;
             do
             {
-                fileName = randomHexString(16);
+                fileName = RandomHexString(16);
                 fullName = dirInfo + "/" + fileName;
             }
             while (File.Exists(fullName));

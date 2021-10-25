@@ -1,9 +1,9 @@
 using System;
+using System.Net;
 using System.Net.Sockets;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using Backups.Entities;
+using Backups.Tools;
 
 namespace Backups.Server
 {
@@ -23,12 +23,15 @@ namespace Backups.Server
         public void Start()
         {
             var tcpListener = new TcpListener(port);
+            tcpListener.Start();
 
             while (true)
             {
                 try
                 {
+                    Console.WriteLine("[Main loop]: waiting for a client");
                     TcpClient tcpClient = tcpListener.AcceptTcpClient();
+                    Console.WriteLine($"[Main loop]: {tcpClient.Client.RemoteEndPoint} connected");
                     var task = Task.Run(() => ServerTcpClient(tcpClient));
                 }
                 catch (Exception e)
@@ -39,55 +42,37 @@ namespace Backups.Server
             }
         }
 
-        public void ServerTcpClient(TcpClient tcpClient)
+        private void ServerTcpClient(TcpClient tcpClient)
         {
+            string prefix = $"[{tcpClient.Client.RemoteEndPoint}]: ";
             NetworkStream stream = tcpClient.GetStream();
 
-            while (true)
+            bool continueServing = true;
+
+            while (continueServing)
             {
-                RepositoryRemote.Action action = ReadAction(stream);
+                Console.WriteLine(prefix + "reading action code");
+                RepositoryRemote.Action action = StreamUtils.ReadAction(stream);
                 switch (action)
                 {
-                    case RepositoryRemote.Action.CREATE_STORAGE:
-                        int size = ReadInt(stream);
-                        byte[] cache = new byte[size];
-                        int howMushRead = 0;
-                        while (howMushRead < size)
-                        {
-                            howMushRead += stream.Read(cache, howMushRead, size - howMushRead);
-                        }
-
-                        string storageId = repositoryLocal.CreateStorage(cache);
-                        WriteString(stream, storageId);
+                    case RepositoryRemote.Action.CreateStorage:
+                        Console.WriteLine(prefix + "action code: create storage; reading data");
+                        byte[] data = StreamUtils.ReadByteArray(stream);
+                        string storageId = repositoryLocal.CreateStorage(data);
+                        Console.WriteLine( $"{prefix}storage {storageId} was created, sending");
+                        StreamUtils.WriteString(stream, storageId);
+                        Console.WriteLine( $"{prefix}storage id is sent, closing connection");
+                        continueServing = false;
+                        break;
+                    default:
+                        Console.WriteLine(prefix + "unsupported action code, aborting connection");
+                        continueServing = false;
                         break;
                 }
             }
-        }
 
-        public int ReadInt(NetworkStream stream)
-        {
-            byte[] bytes = new byte[4];
-            stream.Read(bytes, 0, 4);
-            return (bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8) | bytes[3];
-        }
-
-        public RepositoryRemote.Action ReadAction(NetworkStream stream)
-        {
-            return (RepositoryRemote.Action) stream.ReadByte();
-        }
-
-
-        public void WriteInt(NetworkStream stream, int num)
-        {
-            byte[] bytes = {(byte) num, (byte) (num >> 8), (byte) (num >> 16), (byte) (num >> 24)};
-            stream.Write(bytes,0, 4);
-        }
-
-        public void WriteString(NetworkStream stream, string str)
-        {
-            byte[] bytes = Encoding.UTF8.GetBytes(str);
-            WriteInt(stream, bytes.Length);
-            stream.Write(bytes);
+            stream.Close();
+            tcpClient.Close();
         }
     }
 }

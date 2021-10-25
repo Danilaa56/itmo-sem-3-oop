@@ -4,7 +4,8 @@ namespace Backups.Tools
 {
     public class BackupException : Exception
     {
-        public BackupException(string message, Exception e) : base(message, e)
+        public BackupException(string message, Exception e)
+            : base(message, e)
         {
         }
     }

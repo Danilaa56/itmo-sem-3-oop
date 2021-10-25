@@ -12,6 +12,7 @@ namespace Backups.Server
             int port = int.Parse(args[0]);
             var repoServer = new RepositoryRemoteServer(port, args[1]);
             repoServer.Start();
+            repoServer.Wait();
         }
     }
 }

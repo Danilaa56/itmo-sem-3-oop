@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Immutable;
 using System.Net.Sockets;
 using Backups.Tools;
 
@@ -17,6 +18,7 @@ namespace Backups.Entities
         public enum Action : byte
         {
             CreateStorage = 0,
+            GetStorages = 1,
         }
 
         public string Address { get; }
@@ -40,6 +42,27 @@ namespace Backups.Entities
             catch (SocketException e)
             {
                 throw new BackupException("Failed send file to the remote repo", e);
+            }
+        }
+
+        public override ImmutableArray<string> GetStorages()
+        {
+            try
+            {
+                var tcpClient = new TcpClient(Address, Port);
+                NetworkStream stream = tcpClient.GetStream();
+
+                StreamUtils.WriteAction(stream, Action.GetStorages);
+
+                ImmutableArray<string> storageIds = StreamUtils.ReadStringList(stream);
+
+                stream.Close();
+                tcpClient.Close();
+                return storageIds;
+            }
+            catch (SocketException e)
+            {
+                throw new BackupException("Failed get storages list from the remote repo", e);
             }
         }
     }

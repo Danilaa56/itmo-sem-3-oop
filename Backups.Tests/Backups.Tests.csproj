@@ -13,6 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Backups.Server\Backups.Server.csproj" />
     <ProjectReference Include="..\Backups\Backups.csproj" />
   </ItemGroup>
 

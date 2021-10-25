@@ -1,4 +1,6 @@
-﻿using System.IO;
+﻿using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.IO;
 using System.Text;
 using Backups.Entities;
 
@@ -21,12 +23,12 @@ namespace Backups.Tools
 
         public static RepositoryRemote.Action ReadAction(Stream stream)
         {
-            return (RepositoryRemote.Action) stream.ReadByte();
+            return (RepositoryRemote.Action)stream.ReadByte();
         }
 
         public static void WriteAction(Stream stream, RepositoryRemote.Action action)
         {
-            stream.WriteByte((byte) action);
+            stream.WriteByte((byte)action);
         }
 
         public static byte[] ReadByteArray(Stream stream)
@@ -53,6 +55,25 @@ namespace Backups.Tools
         public static void WriteString(Stream stream, string str)
         {
             WriteByteArray(stream, Encoding.UTF8.GetBytes(str));
+        }
+
+        public static ImmutableArray<string> ReadStringList(Stream stream)
+        {
+            int length = ReadInt(stream);
+            string[] array = new string[length];
+            for (int i = 0; i < length; i++)
+            {
+                array[i] = ReadString(stream);
+            }
+
+            return array.ToImmutableArray();
+        }
+
+        public static void WriteStringList(Stream stream, ICollection<string> strings)
+        {
+            WriteInt(stream, strings.Count);
+            foreach (string str in strings)
+                WriteString(stream, str);
         }
     }
 }

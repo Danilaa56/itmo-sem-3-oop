@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
 using Backups.Tools;
 
@@ -6,16 +8,17 @@ namespace Backups.Entities
 {
     public class RepositoryLocal : Repository
     {
-        private DirectoryInfo dirInfo;
+        private readonly DirectoryInfo _dirInfo;
+        private readonly List<string> _storages = new List<string>();
 
         public RepositoryLocal(string path)
         {
-            dirInfo = new DirectoryInfo(path ?? throw new ArgumentNullException(nameof(path)));
-            if (!dirInfo.Exists)
+            _dirInfo = new DirectoryInfo(path ?? throw new ArgumentNullException(nameof(path)));
+            if (!_dirInfo.Exists)
             {
                 try
                 {
-                    dirInfo.Create();
+                    _dirInfo.Create();
                 }
                 catch (IOException e)
                 {
@@ -23,7 +26,7 @@ namespace Backups.Entities
                 }
             }
 
-            foreach (FileInfo enumerateFile in dirInfo.EnumerateFiles())
+            foreach (FileInfo enumerateFile in _dirInfo.EnumerateFiles())
             {
                 File.Delete(enumerateFile.FullName);
             }
@@ -31,17 +34,23 @@ namespace Backups.Entities
 
         public override string CreateStorage(byte[] data)
         {
-            string fileName;
+            string storageId;
             string fullName;
             do
             {
-                fileName = RandomHexString(16);
-                fullName = dirInfo + "/" + fileName;
+                storageId = StringUtils.RandomHexString(16);
+                fullName = _dirInfo + "/" + storageId;
             }
             while (File.Exists(fullName));
 
             File.WriteAllBytes(fullName, data);
-            return fileName;
+            _storages.Add(storageId);
+            return storageId;
+        }
+
+        public override ImmutableArray<string> GetStorages()
+        {
+            return _storages.ToImmutableArray();
         }
     }
 }

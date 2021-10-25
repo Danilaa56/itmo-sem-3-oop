@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Immutable;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
@@ -9,20 +10,33 @@ namespace Backups.Server
 {
     public class RepositoryRemoteServer
     {
-        private int port;
-        private RepositoryLocal repositoryLocal;
+        private readonly int _port;
+        private readonly RepositoryLocal _repositoryLocal;
+        private Task _serverTask;
 
         public RepositoryRemoteServer(int port, string repoPath)
         {
-            if (port < 0 || port > 65535)
+            if (port is < 0 or > 65535)
                 throw new ArgumentException("Invalid port", nameof(port));
-            this.port = port;
-            repositoryLocal = new RepositoryLocal(repoPath);
+            _port = port;
+            _repositoryLocal = new RepositoryLocal(repoPath);
         }
 
         public void Start()
         {
-            var tcpListener = new TcpListener(port);
+            if (_serverTask is not null)
+                throw new BackupException("Server has already been started");
+            _serverTask = Task.Run(Run);
+        }
+
+        public void Wait()
+        {
+            _serverTask.Wait();
+        }
+
+        private void Run()
+        {
+            var tcpListener = new TcpListener(IPAddress.Loopback, _port);
             tcpListener.Start();
 
             while (true)
@@ -32,7 +46,7 @@ namespace Backups.Server
                     Console.WriteLine("[Main loop]: waiting for a client");
                     TcpClient tcpClient = tcpListener.AcceptTcpClient();
                     Console.WriteLine($"[Main loop]: {tcpClient.Client.RemoteEndPoint} connected");
-                    var task = Task.Run(() => ServerTcpClient(tcpClient));
+                    Task.Run(() => ServerTcpClient(tcpClient));
                 }
                 catch (Exception e)
                 {
@@ -58,10 +72,17 @@ namespace Backups.Server
                     case RepositoryRemote.Action.CreateStorage:
                         Console.WriteLine(prefix + "action code: create storage; reading data");
                         byte[] data = StreamUtils.ReadByteArray(stream);
-                        string storageId = repositoryLocal.CreateStorage(data);
-                        Console.WriteLine( $"{prefix}storage {storageId} was created, sending");
+                        string storageId = _repositoryLocal.CreateStorage(data);
+                        Console.WriteLine($"{prefix}storage {storageId} was created, sending");
                         StreamUtils.WriteString(stream, storageId);
-                        Console.WriteLine( $"{prefix}storage id is sent, closing connection");
+                        Console.WriteLine($"{prefix}storage id is sent, closing connection");
+                        continueServing = false;
+                        break;
+                    case RepositoryRemote.Action.GetStorages:
+                        Console.WriteLine(prefix + "action code: get storages; sending data");
+                        ImmutableArray<string> storageIds = _repositoryLocal.GetStorages();
+                        StreamUtils.WriteStringList(stream, storageIds);
+                        Console.WriteLine($"{prefix}storages id is sent, closing connection");
                         continueServing = false;
                         break;
                     default:

@@ -5,7 +5,7 @@ using Backups.Tools;
 
 namespace Backups.Entities
 {
-    public class RepositoryRemote : Repository
+    public class RepositoryRemote : IRepository
     {
         public RepositoryRemote(string address, int port)
         {
@@ -15,7 +15,7 @@ namespace Backups.Entities
             Port = port;
         }
 
-        public enum Action : byte
+        public enum ActionCode : byte
         {
             CreateStorage = 0,
             GetStorages = 1,
@@ -24,14 +24,14 @@ namespace Backups.Entities
         public string Address { get; }
         public int Port { get; }
 
-        public override string CreateStorage(byte[] data)
+        public string CreateStorage(byte[] data)
         {
             try
             {
                 var tcpClient = new TcpClient(Address, Port);
                 NetworkStream stream = tcpClient.GetStream();
 
-                StreamUtils.WriteAction(stream, Action.CreateStorage);
+                StreamUtils.WriteAction(stream, ActionCode.CreateStorage);
                 StreamUtils.WriteByteArray(stream, data);
                 string storageId = StreamUtils.ReadString(stream);
 
@@ -45,14 +45,14 @@ namespace Backups.Entities
             }
         }
 
-        public override ImmutableArray<string> GetStorages()
+        public ImmutableArray<string> GetStorages()
         {
             try
             {
                 var tcpClient = new TcpClient(Address, Port);
                 NetworkStream stream = tcpClient.GetStream();
 
-                StreamUtils.WriteAction(stream, Action.GetStorages);
+                StreamUtils.WriteAction(stream, ActionCode.GetStorages);
 
                 ImmutableArray<string> storageIds = StreamUtils.ReadStringList(stream);
 

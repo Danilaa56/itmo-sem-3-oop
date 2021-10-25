@@ -1,6 +1,6 @@
 ﻿using System.IO;
 using Backups.Entities;
-using Backups.Server;
+using Backups.Server.Entities;
 using NUnit.Framework;
 
 namespace Backups.Tests
@@ -18,13 +18,12 @@ namespace Backups.Tests
 
             File.WriteAllText($"tmp{Sep}data{Sep}file1.txt", "Hello 1");
             File.WriteAllText($"tmp{Sep}data{Sep}file2.txt", "Hello 2 and longer");
-
         }
 
         [Test]
         public void TestBackupJob()
         {
-            Repository repo = new RepositoryLocal($"tmp{Sep}repo");
+            IRepository repo = new RepositoryLocal($"tmp{Sep}repo");
 
             var backupJob = new BackupJob(repo, StorageType.SplitStorages);
             var jobObject1 = new JobObject($"tmp{Sep}data", "file1.txt");
@@ -44,7 +43,7 @@ namespace Backups.Tests
         [Test]
         public void TestLocalRepo()
         {
-            Repository repo = new RepositoryLocal($"tmp{Sep}repo");
+            IRepository repo = new RepositoryLocal($"tmp{Sep}repo");
 
             var backupJob = new BackupJob(repo);
             var jobObject1 = new JobObject($"tmp{Sep}data", "file1.txt");
@@ -63,7 +62,7 @@ namespace Backups.Tests
             var server = new RepositoryRemoteServer(8080, $"tmp{Sep}repo");
             server.Start();
 
-            Repository repo = new RepositoryRemote("localhost", 8080);
+            IRepository repo = new RepositoryRemote("localhost", 8080);
 
             var backupJob = new BackupJob(repo);
             var jobObject1 = new JobObject($"tmp{Sep}data", "file1.txt");

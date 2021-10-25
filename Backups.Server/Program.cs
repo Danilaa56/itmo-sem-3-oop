@@ -1,4 +1,5 @@
 using System;
+using Backups.Server.Entities;
 
 namespace Backups.Server
 {

@@ -1,12 +1,13 @@
 using System;
-using System.Collections.Immutable;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 using Backups.Entities;
+using Backups.Server.Entities.Actions;
 using Backups.Tools;
 
-namespace Backups.Server
+namespace Backups.Server.Entities
 {
     public class RepositoryRemoteServer
     {
@@ -14,12 +15,18 @@ namespace Backups.Server
         private readonly RepositoryLocal _repositoryLocal;
         private Task _serverTask;
 
+        private readonly Dictionary<RepositoryRemote.ActionCode, IAction> _actions =
+            new Dictionary<RepositoryRemote.ActionCode, IAction>();
+
         public RepositoryRemoteServer(int port, string repoPath)
         {
             if (port is < 0 or > 65535)
                 throw new ArgumentException("Invalid port", nameof(port));
             _port = port;
             _repositoryLocal = new RepositoryLocal(repoPath);
+
+            _actions[RepositoryRemote.ActionCode.CreateStorage] = new ActionCreateStorage();
+            _actions[RepositoryRemote.ActionCode.GetStorages] = new ActionGetStorages();
         }
 
         public void Start()
@@ -66,29 +73,16 @@ namespace Backups.Server
             while (continueServing)
             {
                 Console.WriteLine(prefix + "reading action code");
-                RepositoryRemote.Action action = StreamUtils.ReadAction(stream);
-                switch (action)
+                RepositoryRemote.ActionCode actionCodeCode = StreamUtils.ReadAction(stream);
+
+                if (_actions.TryGetValue(actionCodeCode, out IAction action))
                 {
-                    case RepositoryRemote.Action.CreateStorage:
-                        Console.WriteLine(prefix + "action code: create storage; reading data");
-                        byte[] data = StreamUtils.ReadByteArray(stream);
-                        string storageId = _repositoryLocal.CreateStorage(data);
-                        Console.WriteLine($"{prefix}storage {storageId} was created, sending");
-                        StreamUtils.WriteString(stream, storageId);
-                        Console.WriteLine($"{prefix}storage id is sent, closing connection");
-                        continueServing = false;
-                        break;
-                    case RepositoryRemote.Action.GetStorages:
-                        Console.WriteLine(prefix + "action code: get storages; sending data");
-                        ImmutableArray<string> storageIds = _repositoryLocal.GetStorages();
-                        StreamUtils.WriteStringList(stream, storageIds);
-                        Console.WriteLine($"{prefix}storages id is sent, closing connection");
-                        continueServing = false;
-                        break;
-                    default:
-                        Console.WriteLine(prefix + "unsupported action code, aborting connection");
-                        continueServing = false;
-                        break;
+                    continueServing = action.Proc(prefix, stream, _repositoryLocal);
+                }
+                else
+                {
+                    Console.WriteLine(prefix + "unsupported action code, aborting connection");
+                    continueServing = false;
                 }
             }
 

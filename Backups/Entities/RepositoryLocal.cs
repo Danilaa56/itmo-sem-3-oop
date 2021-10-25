@@ -6,7 +6,7 @@ using Backups.Tools;
 
 namespace Backups.Entities
 {
-    public class RepositoryLocal : Repository
+    public class RepositoryLocal : IRepository
     {
         private readonly DirectoryInfo _dirInfo;
         private readonly List<string> _storages = new List<string>();
@@ -32,7 +32,7 @@ namespace Backups.Entities
             }
         }
 
-        public override string CreateStorage(byte[] data)
+        public string CreateStorage(byte[] data)
         {
             string storageId;
             string fullName;
@@ -48,7 +48,7 @@ namespace Backups.Entities
             return storageId;
         }
 
-        public override ImmutableArray<string> GetStorages()
+        public ImmutableArray<string> GetStorages()
         {
             return _storages.ToImmutableArray();
         }

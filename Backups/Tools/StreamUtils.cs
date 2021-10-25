@@ -21,14 +21,14 @@ namespace Backups.Tools
             stream.Write(bytes, 0, 4);
         }
 
-        public static RepositoryRemote.Action ReadAction(Stream stream)
+        public static RepositoryRemote.ActionCode ReadAction(Stream stream)
         {
-            return (RepositoryRemote.Action)stream.ReadByte();
+            return (RepositoryRemote.ActionCode)stream.ReadByte();
         }
 
-        public static void WriteAction(Stream stream, RepositoryRemote.Action action)
+        public static void WriteAction(Stream stream, RepositoryRemote.ActionCode actionCode)
         {
-            stream.WriteByte((byte)action);
+            stream.WriteByte((byte)actionCode);
         }
 
         public static byte[] ReadByteArray(Stream stream)

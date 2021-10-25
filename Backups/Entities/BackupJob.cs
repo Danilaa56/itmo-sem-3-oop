@@ -10,11 +10,11 @@ namespace Backups.Entities
     public class BackupJob
     {
         private readonly HashSet<JobObject> _files = new HashSet<JobObject>();
-        private readonly Repository _repository;
+        private readonly IRepository _repository;
         private readonly List<RestorePoint> _restorePoints = new List<RestorePoint>();
         private StorageType _activeStorageType;
 
-        public BackupJob(Repository repository, StorageType storageType = StorageType.SingleStorage)
+        public BackupJob(IRepository repository, StorageType storageType = StorageType.SingleStorage)
         {
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
             _activeStorageType = storageType;

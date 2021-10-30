@@ -35,7 +35,7 @@ namespace StorageType {
 }
 class BackupJob {
     + IRepository
-    + IStorageType
+    + StorageType
     + HashSet<JobObject> files
     + List<RestorePoint> restorePoints
 

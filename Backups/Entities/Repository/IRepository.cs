@@ -1,6 +1,6 @@
 using System.Collections.Immutable;
 
-namespace Backups.Entities
+namespace Backups.Entities.Repository
 {
     public interface IRepository
     {

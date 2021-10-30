@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using Backups.Entities;
+using Backups.Entities.Repository;
 using Backups.Server.Entities;
 using NUnit.Framework;
 
@@ -25,7 +26,7 @@ namespace Backups.Tests
         {
             IRepository repo = new RepositoryLocal($"tmp{Sep}repo");
 
-            var backupJob = new BackupJob(repo, BackupJob.SplitStorage);
+            var backupJob = new BackupJob(repo, StorageType.SplitStorage);
             var jobObject1 = new JobObject($"tmp{Sep}data", "file1.txt");
             var jobObject2 = new JobObject($"tmp{Sep}data", "file2.txt");
 
@@ -45,7 +46,7 @@ namespace Backups.Tests
         {
             IRepository repo = new RepositoryLocal($"tmp{Sep}repo");
 
-            var backupJob = new BackupJob(repo, BackupJob.SingleStorage);
+            var backupJob = new BackupJob(repo, StorageType.SingleStorage);
             var jobObject1 = new JobObject($"tmp{Sep}data", "file1.txt");
             var jobObject2 = new JobObject($"tmp{Sep}data", "file2.txt");
 
@@ -64,7 +65,7 @@ namespace Backups.Tests
 
             IRepository repo = new RepositoryRemote("localhost", 8080);
 
-            var backupJob = new BackupJob(repo, BackupJob.SingleStorage);
+            var backupJob = new BackupJob(repo, StorageType.SingleStorage);
             var jobObject1 = new JobObject($"tmp{Sep}data", "file1.txt");
             var jobObject2 = new JobObject($"tmp{Sep}data", "file2.txt");
 

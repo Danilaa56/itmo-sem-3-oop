@@ -2,7 +2,7 @@
 using System.Collections.Immutable;
 using System.IO;
 using System.Text;
-using Backups.Entities;
+using Backups.Entities.Repository;
 
 namespace Backups.Tools
 {

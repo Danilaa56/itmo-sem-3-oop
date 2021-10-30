@@ -7,7 +7,7 @@ namespace Backups.Entities
 {
     public class RestorePoint
     {
-        public RestorePoint(long creationDateUtc, HashSet<string> storageIds)
+        public RestorePoint(long creationDateUtc, ICollection<string> storageIds)
         {
             CreationDateUtc = creationDateUtc;
             if (storageIds is null) throw new ArgumentNullException(nameof(storageIds));

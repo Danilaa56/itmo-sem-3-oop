@@ -1,22 +1,23 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
+using System.Linq;
 
 namespace Backups.Tools
 {
-    public class ZipUtils
+    public static class ZipUtils
     {
-        public static byte[] Zip(Dictionary<string, byte[]> filesInfo)
+        public static byte[] Zip(IEnumerable<NamedData> namedData)
         {
             using var ms = new MemoryStream();
             {
                 using var archive = new ZipArchive(ms, ZipArchiveMode.Update);
                 {
-                    foreach ((string fileName, byte[] data) in filesInfo)
+                    foreach (NamedData namedDataSample in namedData)
                     {
-                        ZipArchiveEntry orderEntry = archive.CreateEntry(fileName);
+                        ZipArchiveEntry orderEntry = archive.CreateEntry(namedDataSample.Name);
                         using var writer = new BinaryWriter(orderEntry.Open());
-                        writer.Write(data);
+                        writer.Write(namedDataSample.Data.ToArray());
                     }
                 }
             }

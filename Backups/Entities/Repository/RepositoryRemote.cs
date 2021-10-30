@@ -3,7 +3,7 @@ using System.Collections.Immutable;
 using System.Net.Sockets;
 using Backups.Tools;
 
-namespace Backups.Entities
+namespace Backups.Entities.Repository
 {
     public class RepositoryRemote : IRepository
     {

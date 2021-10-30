@@ -1,7 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using Backups.Entities.StorageType;
+using System.Linq;
+using Backups.Entities.Repository;
 using Backups.Tools;
 
 namespace Backups.Entities
@@ -11,16 +12,13 @@ namespace Backups.Entities
         private readonly HashSet<JobObject> _files = new HashSet<JobObject>();
         private readonly IRepository _repository;
         private readonly List<RestorePoint> _restorePoints = new List<RestorePoint>();
-        private IStorageType _activeStorageType;
+        private StorageType _activeStorageType;
 
-        public BackupJob(IRepository repository, IStorageType storageType)
+        public BackupJob(IRepository repository, StorageType storageType)
         {
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
             _activeStorageType = storageType;
         }
-
-        public static IStorageType SingleStorage { get; } = new StorageTypeSingle();
-        public static IStorageType SplitStorage { get; } = new StorageTypeSplit();
 
         public void Add(JobObject jobObject)
         {
@@ -38,7 +36,8 @@ namespace Backups.Entities
         {
             long date = DateUtils.CurrentTimeMillis();
 
-            HashSet<string> storages = _activeStorageType.StoragesFromJobObjects(_files, _repository);
+            var storages = _activeStorageType.PackJobObjects(_files).Select(data => _repository.CreateStorage(data))
+                .ToList();
             var restorePoint = new RestorePoint(date, storages);
             _restorePoints.Add(restorePoint);
             return restorePoint;
@@ -49,7 +48,7 @@ namespace Backups.Entities
             return _restorePoints.ToImmutableList();
         }
 
-        public void SetStorageType(IStorageType storageType)
+        public void SetStorageType(StorageType storageType)
         {
             _activeStorageType = storageType;
         }

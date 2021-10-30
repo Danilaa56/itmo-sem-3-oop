@@ -4,7 +4,7 @@ using System.Collections.Immutable;
 using System.IO;
 using Backups.Tools;
 
-namespace Backups.Entities
+namespace Backups.Entities.Repository
 {
     public class RepositoryLocal : IRepository
     {

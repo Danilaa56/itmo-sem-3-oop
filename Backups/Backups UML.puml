@@ -2,7 +2,7 @@
 'https://plantuml.com/class-diagram
 
 namespace Repository {
-    abstract class Repository {
+    interface IRepository {
         + CreateStorage(byte[] data);
         + GetStorages();
     }
@@ -16,12 +16,26 @@ namespace Repository {
         + int Port
     }
 
-    Repository <-- RepositoryLocal
-    Repository <-- RepositoryRemote
+    IRepository <-- RepositoryLocal
+    IRepository <-- RepositoryRemote
+}
+namespace StorageType {
+    abstract class StorageType {
+        + PackJobObjects(JobObjects);
+    }
+
+    class StorageTypeSingle {
+    }
+
+    class StorageTypeSplit {
+    }
+
+    StorageType <-- StorageTypeSingle
+    StorageType <-- StorageTypeSplit
 }
 class BackupJob {
-    + Repository
-    + StorageType
+    + IRepository
+    + IStorageType
     + HashSet<JobObject> files
     + List<RestorePoint> restorePoints
 
@@ -34,11 +48,6 @@ class JobObject {
     + string FileName
     + string RootPath
     + byte[] GetData()
-}
-
-enum StorageType{
-    SplitStorages
-    SingleStorage
 }
 
 class RestorePoint {

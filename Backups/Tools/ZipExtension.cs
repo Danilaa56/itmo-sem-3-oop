@@ -5,9 +5,9 @@ using System.Linq;
 
 namespace Backups.Tools
 {
-    public static class ZipUtils
+    public static class ZipExtension
     {
-        public static byte[] Zip(IEnumerable<NamedData> namedData)
+        public static byte[] Zip(this IEnumerable<NamedData> namedData)
         {
             using var ms = new MemoryStream();
             {

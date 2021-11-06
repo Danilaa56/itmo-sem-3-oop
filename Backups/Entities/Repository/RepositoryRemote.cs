@@ -31,9 +31,9 @@ namespace Backups.Entities.Repository
                 var tcpClient = new TcpClient(Address, Port);
                 NetworkStream stream = tcpClient.GetStream();
 
-                StreamUtils.WriteAction(stream, ActionCode.CreateStorage);
-                StreamUtils.WriteByteArray(stream, data);
-                string storageId = StreamUtils.ReadString(stream);
+                stream.WriteAction(ActionCode.CreateStorage);
+                stream.WriteByteArray(data);
+                string storageId = stream.ReadString();
 
                 stream.Close();
                 tcpClient.Close();
@@ -52,9 +52,9 @@ namespace Backups.Entities.Repository
                 var tcpClient = new TcpClient(Address, Port);
                 NetworkStream stream = tcpClient.GetStream();
 
-                StreamUtils.WriteAction(stream, ActionCode.GetStorages);
+                stream.WriteAction(ActionCode.GetStorages);
 
-                ImmutableArray<string> storageIds = StreamUtils.ReadStringList(stream);
+                ImmutableArray<string> storageIds = stream.ReadStringList();
 
                 stream.Close();
                 tcpClient.Close();

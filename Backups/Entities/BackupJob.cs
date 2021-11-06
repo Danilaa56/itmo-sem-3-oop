@@ -9,7 +9,7 @@ namespace Backups.Entities
 {
     public class BackupJob
     {
-        private readonly HashSet<JobObject> _files = new HashSet<JobObject>();
+        private readonly HashSet<IJobObject> _files = new HashSet<IJobObject>();
         private readonly IRepository _repository;
         private readonly List<RestorePoint> _restorePoints = new List<RestorePoint>();
         private StorageType _activeStorageType;
@@ -20,13 +20,13 @@ namespace Backups.Entities
             _activeStorageType = storageType;
         }
 
-        public void Add(JobObject jobObject)
+        public void Add(IJobObject jobObject)
         {
             if (!_files.Add(jobObject ?? throw new ArgumentNullException(nameof(jobObject))))
                 throw new ArgumentException("This object is already added");
         }
 
-        public void Remove(JobObject jobObject)
+        public void Remove(IJobObject jobObject)
         {
             if (!_files.Remove(jobObject ?? throw new ArgumentNullException(nameof(jobObject))))
                 throw new ArgumentException("There is no such object in this Job");

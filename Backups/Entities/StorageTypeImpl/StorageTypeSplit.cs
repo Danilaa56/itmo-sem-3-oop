@@ -6,11 +6,11 @@ namespace Backups.Entities.StorageTypeImpl
 {
     public class StorageTypeSplit : StorageType
     {
-        public override IEnumerable<byte[]> PackJobObjects(IEnumerable<JobObject> jobObjects)
+        public override IEnumerable<byte[]> PackJobObjects(IEnumerable<IJobObject> jobObjects)
         {
             return jobObjects
                 .Select(jobObject => new NamedData(jobObject.FileName, jobObject.GetData()))
-                .Select(namedData => ZipUtils.Zip(new List<NamedData>() { namedData }));
+                .Select(namedData => new List<NamedData> { namedData }.Zip());
         }
     }
 }

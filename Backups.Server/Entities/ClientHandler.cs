@@ -19,6 +19,8 @@ namespace Backups.Server.Entities
             _repo = repo ?? throw new ArgumentNullException(nameof(repo));
             if (tcpClient is null)
                 throw new ArgumentNullException(nameof(tcpClient));
+            if (tcpClient.Client is null)
+                throw new ArgumentException("Tcp client must have non-null Client property", nameof(tcpClient));
             if (tcpClient.Client.RemoteEndPoint is null)
                 throw new ArgumentException("Tcp client must have remote address", nameof(tcpClient));
             _logger = new Logger(tcpClient.Client.RemoteEndPoint.ToString());
@@ -27,47 +29,55 @@ namespace Backups.Server.Entities
 
         public void Handle()
         {
-            while (_continueServing)
+            try
             {
-                _logger.Info("reading action code");
-                RepositoryRemote.ActionCode actionCode = StreamUtils.ReadAction(_stream);
-
-                switch (actionCode)
+                while (_continueServing)
                 {
-                    case RepositoryRemote.ActionCode.CreateStorage:
-                        _createStorage();
-                        break;
-                    case RepositoryRemote.ActionCode.GetStorages:
-                        _getStorages();
-                        break;
-                    default:
-                        _unknownActionCode();
-                        break;
+                    _logger.Info("reading action code");
+                    RepositoryRemote.ActionCode actionCode = _stream.ReadAction();
+
+                    switch (actionCode)
+                    {
+                        case RepositoryRemote.ActionCode.CreateStorage:
+                            CreateStorage();
+                            break;
+                        case RepositoryRemote.ActionCode.GetStorages:
+                            GetStorages();
+                            break;
+                        default:
+                            UnknownActionCode();
+                            break;
+                    }
                 }
+            }
+            catch (Exception e)
+            {
+                _logger.Error("An error acquired while handling the connection");
+                _logger.Error(e.Message);
             }
         }
 
-        private void _createStorage()
+        private void CreateStorage()
         {
             _logger.Info("create storage, reading data");
-            byte[] data = StreamUtils.ReadByteArray(_stream);
+            byte[] data = _stream.ReadByteArray();
             string storageId = _repo.CreateStorage(data);
             _logger.Info($"storage {storageId} was created, sending");
-            StreamUtils.WriteString(_stream, storageId);
+            _stream.WriteString(storageId);
             _logger.Info($"storage id was sent, closing connection");
             _continueServing = false;
         }
 
-        private void _getStorages()
+        private void GetStorages()
         {
             _logger.Info("get storages, sending data");
             ImmutableArray<string> storageIds = _repo.GetStorages();
-            StreamUtils.WriteStringList(_stream, storageIds);
+            _stream.WriteStringList(storageIds);
             _logger.Info("storage ids was sent, closing connection");
             _continueServing = false;
         }
 
-        private void _unknownActionCode()
+        private void UnknownActionCode()
         {
             _logger.Error("unsupported action code, aborting connection");
             _continueServing = false;

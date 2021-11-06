@@ -8,6 +8,6 @@ namespace Backups.Entities
         public static StorageType SingleStorage { get; } = new StorageTypeSingle();
         public static StorageType SplitStorage { get; } = new StorageTypeSplit();
 
-        public abstract IEnumerable<byte[]> PackJobObjects(IEnumerable<JobObject> jobObjects);
+        public abstract IEnumerable<byte[]> PackJobObjects(IEnumerable<IJobObject> jobObjects);
     }
 }

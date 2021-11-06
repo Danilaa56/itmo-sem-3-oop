@@ -6,12 +6,12 @@ namespace Backups.Entities.StorageTypeImpl
 {
     public class StorageTypeSingle : StorageType
     {
-        public override IEnumerable<byte[]> PackJobObjects(IEnumerable<JobObject> jobObjects)
+        public override IEnumerable<byte[]> PackJobObjects(IEnumerable<IJobObject> jobObjects)
         {
             var packedData = new List<byte[]>();
             var filesData = jobObjects.Select(jobObject => new NamedData(jobObject.FileName, jobObject.GetData()))
                 .ToList();
-            packedData.Add(ZipUtils.Zip(filesData));
+            packedData.Add(filesData.Zip());
             return packedData;
         }
     }

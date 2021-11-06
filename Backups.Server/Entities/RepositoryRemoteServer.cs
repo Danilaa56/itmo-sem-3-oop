@@ -52,7 +52,7 @@ namespace Backups.Server.Entities
                 }
                 catch (Exception e)
                 {
-                    logger.Error("Failed to serve connection: ");
+                    logger.Error("Failed to accept connection: ");
                     logger.Error(e.Message);
                 }
             }

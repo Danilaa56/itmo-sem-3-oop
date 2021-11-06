@@ -3,9 +3,9 @@ using System.IO;
 
 namespace Backups.Entities
 {
-    public class JobObject
+    public class JobObjectLocal : IJobObject
     {
-        public JobObject(string rootPath, string fileName)
+        public JobObjectLocal(string rootPath, string fileName)
         {
             RootPath = rootPath ?? throw new ArgumentNullException(nameof(rootPath));
             FileName = fileName ?? throw new ArgumentNullException(nameof(fileName));
@@ -16,7 +16,7 @@ namespace Backups.Entities
 
         public byte[] GetData()
         {
-            return File.ReadAllBytes(RootPath + "/" + FileName);
+            return File.ReadAllBytes(RootPath + Path.DirectorySeparatorChar + FileName);
         }
     }
 }

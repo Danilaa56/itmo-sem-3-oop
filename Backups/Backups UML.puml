@@ -1,0 +1,66 @@
+@startuml
+'https://plantuml.com/class-diagram
+
+namespace Repository {
+    interface IRepository {
+        + CreateStorage(byte[] data);
+        + GetStorages();
+    }
+
+    class RepositoryLocal {
+        + DirectoryInfo dirInfo
+    }
+
+    class RepositoryRemote {
+        + string Address
+        + int Port
+    }
+
+    IRepository <-- RepositoryLocal
+    IRepository <-- RepositoryRemote
+}
+namespace StorageType {
+    abstract class StorageType {
+        + PackJobObjects(JobObjects);
+    }
+
+    class StorageTypeSingle {
+    }
+
+    class StorageTypeSplit {
+    }
+
+    StorageType <-- StorageTypeSingle
+    StorageType <-- StorageTypeSplit
+}
+class BackupJob {
+    + IRepository
+    + StorageType
+    + HashSet<JobObject> files
+    + List<RestorePoint> restorePoints
+
+    + Add(JobObject)
+    + Remove(JobObject)
+    + CreateRestorePoint()
+}
+
+class JobObject {
+    + string FileName
+    + string RootPath
+    + byte[] GetData()
+}
+
+class RestorePoint {
+    + long CreationDateUtc
+    + List<string> StorageIds
+}
+
+BackupJob -down-|> StorageType
+BackupJob -down-|> JobObject : GetData()
+BackupJob <|-down-- JobObject : byte[]
+BackupJob -down-|> RestorePoint : StorageIds
+BackupJob <|-down- RestorePoint : RestorePoint
+BackupJob --down-|> Repository : byte[]
+BackupJob <|-down-- Repository : storage id
+
+@enduml

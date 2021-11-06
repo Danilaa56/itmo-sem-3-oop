@@ -14,6 +14,7 @@
 
   <ItemGroup>
     <None Include="..\.editorconfig" />
+    <None Remove="Backups Class.puml" />
   </ItemGroup>
 
   <ItemGroup>

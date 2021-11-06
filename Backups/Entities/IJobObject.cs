@@ -2,8 +2,7 @@ namespace Backups.Entities
 {
     public interface IJobObject
     {
-        public string FileName { get; }
-
-        public byte[] GetData();
+        string FileName { get; }
+        byte[] GetData();
     }
 }

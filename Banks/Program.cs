@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using Banks.UI;
 using Banks.UI.Commands;
 using Shops.Commands;
 
@@ -7,15 +9,25 @@ namespace Banks
 {
     internal class Program
     {
-        private static Context _context = new Context();
+        private static ICli _cli = new Cli();
+
+        // private static Context _context = new Context();
         private static Dictionary<string, Command> _commands = new Dictionary<string, Command>();
 
         private static void Main()
         {
-            _commands["bank"] = new BankCommand(_context);
-            _commands["person"] = new PersonCommand(_context);
+            using (var db = new BanksDbContext())
+            {
+                db.Database.EnsureCreated();
+                Console.WriteLine(db.Banks.ToList().First().Subscribers.Count);
+            }
+
+            _commands["bank"] = new BankCommand(_cli);
+            _commands["person"] = new PersonCommand();
+            // _commands["time"] = new TimeCommand(_context);
             _commands["quit"] = new QuitCommand();
-            _commands["time"] = new TimeCommand(_context);
+
+            PrintWelcomeMessage();
 
             while (true)
             {
@@ -29,24 +41,24 @@ namespace Banks
                     {
                         CommandResponse response = command.ProcessCommand(args);
                         foreach (string responseLine in response.Lines)
-                            Console.WriteLine(responseLine);
+                            _cli.WriteLine(responseLine);
                         if (response.ShouldExit)
                             break;
                     }
                     catch (Exception e)
                     {
-                        Console.WriteLine(e.Message);
+                        _cli.WriteLine(e.Message);
+                        _cli.WriteLine(e.StackTrace);
                     }
                 }
                 else
                 {
-                    Console.WriteLine("Unknown command. Try to use one of them:");
-                    foreach (string commandsKey in _commands.Keys)
-                    {
-                        Console.WriteLine(commandsKey);
-                    }
+                    _cli.WriteLine("Unknown command. Try to use one of them:");
+                    PrintCommands();
                 }
             }
+
+            // _context.Dispose();
         }
 
         private static string[] ReadCommand()
@@ -88,6 +100,32 @@ namespace Banks
                 list.Add(new string(charsCache, 0, cacheIndex));
 
             return list.ToArray();
+        }
+
+        private static void PrintWelcomeMessage()
+        {
+            _cli.WriteLine("Welcome to...");
+            _cli.WriteLine("================================================================================");
+            _cli.WriteLine("==                                                                            ==");
+            _cli.WriteLine("==     =====       ======   ===   ==   ==  ==    ======                       ==");
+            _cli.WriteLine("==     ==  ==     ==   ==   ====  ==   == ==    ==    ==                      ==");
+            _cli.WriteLine("==     ==  ==    ==    ==   ====  ==   ====     ==                            ==");
+            _cli.WriteLine("==     ======    ========   === = ==   ===       ======                       ==");
+            _cli.WriteLine("==     ==   ==   ==    ==   ==   ===   ====           ==                      ==");
+            _cli.WriteLine("==     ==   ==   ==    ==   ==   ===   == ==    ==    ==                      ==");
+            _cli.WriteLine("==     ======   ===    ==   ==    ==   ==  ==    ======                       ==");
+            _cli.WriteLine("==                                                                            ==");
+            _cli.WriteLine("================================================================================");
+            _cli.WriteLine("These commands are available:");
+            PrintCommands();
+        }
+
+        private static void PrintCommands()
+        {
+            foreach (string command in _commands.Keys)
+            {
+                _cli.WriteLine(" - " + command);
+            }
         }
     }
 }

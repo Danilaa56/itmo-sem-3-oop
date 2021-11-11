@@ -17,6 +17,8 @@ namespace Banks.Entities.Transactions
             _isCancelled = isCancelled;
         }
 
+        public int Id { get; set; }
+
         public abstract void Process(Dictionary<Account, decimal> accountToMoney);
 
         public virtual void Reverse(Dictionary<Account, decimal> accountToMoney)

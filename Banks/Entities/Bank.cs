@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text.Json;
+using Banks.Entities.Accounts;
 using Banks.Tools;
 
 namespace Banks.Entities
@@ -196,10 +197,11 @@ namespace Banks.Entities
         // public long DepositTime => _depositTime;
         // public decimal AnonLimit => _anonLimit;
         //
-        // public DebitAccount CreateDebitAccount(Person person)
+        // public T CreateAccount<T>(Person person)
+        //     where T : BankAccount
         // {
         //     Account account = CentralBank.CreateAccount(this, person);
-        //     var bankAccount = new DebitAccount(account);
+        //     var bankAccount = new T(account);
         //     _accounts.Add(bankAccount);
         //     return bankAccount;
         // }
@@ -220,6 +222,7 @@ namespace Banks.Entities
         //     _accounts.Add(bankAccount);
         //     return bankAccount;
         // }
+
         //
         // public void CloseAccount(BankAccount account)
         // {

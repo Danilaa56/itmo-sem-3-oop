@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using System.Linq;
-using Banks.DTO;
 using Banks.Entities;
 using Banks.Tools;
+using Microsoft.EntityFrameworkCore;
 
 namespace Banks.BLL
 {
@@ -27,51 +27,51 @@ namespace Banks.BLL
                 depositTime,
                 anonLimit);
             bank.SetDepositLevels(depositPercentForRemainsLevels);
-            using var db = new BanksDbContext();
+            using var db = new DataContext();
             db.Banks.Add(bank);
             db.SaveChanges();
             return bank.Id;
         }
 
+        public static void UnregisterBank(int id)
+        {
+            using var db = new DataContext();
+            db.Banks.Remove(db.BankById(id));
+        }
+
         public static void Subscribe(int bankId, int personId)
         {
-            using var db = new BanksDbContext();
-            if (db.Subscribers.Any(subscriber => subscriber.Bank.Id == bankId && subscriber.Person.Id == personId))
-                throw new BankException("Person is already subscribed for this bank updates");
-            Bank bank = db.BankById(bankId);
-            Person person = db.PersonById(personId);
-            db.ThrowIfNotPresentBank(personId);
-            db.Subscribers.Add(new PersonBankSubscriber() { Bank = bank, Person = person });
+            using var db = new DataContext();
+            db.BankById(bankId).SubscribeForUpdates(db.PersonById(personId));
             db.SaveChanges();
         }
 
         public static void Unsubscribe(int bankId, int personId)
         {
-            using var db = new BanksDbContext();
-            if (db.Subscribers.Find(subscriber => subscriber.Bank.Id == bankId && subscriber.Person.Id == personId))
-                throw new BankException("Person is already subscribed for this bank updates");
-            return db.Banks.FirstOrDefault(bank => bank.Id == id) ??
-                   throw new BankException("There is no bank with such id");
-            Bank bank = db.BankById(bankId);
-            Person person = db.PersonById(personId);
-            db.ThrowIfNotPresentBank(personId);
-            db.Subscribers.Add(new PersonBankSubscriber() { Bank = bank, Person = person });
+            using var db = new DataContext();
+            db.BankById(bankId).UnsubscribeFromUpdates(db.PersonById(personId));
             db.SaveChanges();
         }
 
         public static List<Person> GetSubscribers(int bankId)
         {
-            using var db = new BanksDbContext();
-            return db.Subscribers.Where(subscriber => subscriber.Bank.Id == bankId).Select(sub => sub.Person).ToList();
+            using var db = new DataContext();
+            return db.BankById(bankId).Subscribers;
         }
 
-        public static Bank BankById(this BanksDbContext db, int id)
+        public static List<Bank> List()
         {
-            return db.Banks.FirstOrDefault(bank => bank.Id == id) ??
+            using var db = new DataContext();
+            return db.Banks.Include(bank => bank.Subscribers).ToList();
+        }
+
+        public static Bank BankById(this DataContext db, int id)
+        {
+            return db.Banks.Include(bank => bank.Subscribers).FirstOrDefault(bank => bank.Id == id) ??
                    throw new BankException("There is no bank with such id");
         }
 
-        public static void ThrowIfNotPresentBank(this BanksDbContext db, int bankId)
+        public static void ThrowIfNotPresentBank(this DataContext db, int bankId)
         {
             if (!db.Banks.Any(bank => bank.Id == bankId))
                 throw new BankException("There is no person with such id");

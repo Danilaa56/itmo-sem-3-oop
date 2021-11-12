@@ -17,7 +17,7 @@ namespace Banks.UI.Commands
 
         protected static CommandResponse Response(string msg, bool shouldExit = false)
         {
-            return new CommandResponse(new string[] { msg }, shouldExit);
+            return new CommandResponse(new string[] {msg}, shouldExit);
         }
 
         protected static CommandResponse Response(IEnumerable<string> msgLines, bool shouldExit = false)
@@ -28,16 +28,37 @@ namespace Banks.UI.Commands
         protected static string[] Table(IEnumerable<Person> persons)
         {
             return Table(
-                new string[] { "Id", "Name", "Surname", "Address", "Passport Id" },
+                new string[] {"Id", "Name", "Surname", "Address", "Passport Id"},
                 persons.Select(person => new string[]
                 {
                     person.Id.ToString(), person.Name, person.Surname, person.Address, person.PassportId,
                 }));
         }
 
+        protected static string[] Table(IEnumerable<Bank> banks)
+        {
+            return Table(
+                new string[]
+                {
+                    "Id", "Name", "Debit percent", "Credit commission", "Credit limit",
+                    "Min deposit percent", "Deposit time", "Anon limit",
+                },
+                banks.Select(bank => new string[]
+                {
+                    bank.Id.ToString(),
+                    bank.Name,
+                    bank.DebitPercentForRemains.ToString(),
+                    bank.CreditCommission.ToString(),
+                    bank.CreditLimit.ToString(),
+                    bank.MinDepositPercentForRemains.ToString(),
+                    (bank.DepositTimeInMs / 1000).ToString(),
+                    bank.AnonLimit.ToString(),
+                }));
+        }
+
         protected static string[] Table(IEnumerable<string> headers, IEnumerable<IEnumerable<string>> cells)
         {
-            var lines = new List<IEnumerable<string>> { headers };
+            var lines = new List<IEnumerable<string>> {headers};
             lines.AddRange(cells);
             return Table(lines);
         }
@@ -53,7 +74,7 @@ namespace Banks.UI.Commands
                 }
             }
 
-            string spacing = "  ";
+            string spacing = "   ";
 
             int[] columnWidths = new int[table[0].Length];
             for (int i = 0; i < columnWidths.Length; i++)
@@ -61,7 +82,6 @@ namespace Banks.UI.Commands
                 columnWidths[i] = table.Select(column => column[i]).Max(str => str.Length);
             }
 
-            // int[] columnWidths = table.Select(column => column.Max(str => str.Length)).ToArray();
             int width = columnWidths.Sum() + 2 + ((columnWidths.Length + 1) * spacing.Length);
 
             string[] lines = new string[table.Length + 2];

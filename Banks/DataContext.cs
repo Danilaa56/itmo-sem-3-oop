@@ -1,13 +1,14 @@
-using Banks.DTO;
 using Banks.Entities;
+using Banks.Entities.Accounts;
 using Microsoft.EntityFrameworkCore;
 
 namespace Banks
 {
-    public class BanksDbContext : DbContext
+    public class DataContext : DbContext
     {
-        public BanksDbContext()
+        public DataContext()
         {
+            // Database.EnsureDeleted();
             Database.EnsureCreated();
         }
 
@@ -16,9 +17,14 @@ namespace Banks
         // public DbSet<Person> Persons { get; set; }
         // public DbSet<Account> Accounts { get; set; }
         public DbSet<Person> Persons { get; set; }
-        public DbSet<Account> Accounts { get; set; }
         public DbSet<Bank> Banks { get; set; }
-        public DbSet<PersonBankSubscriber> Subscribers { get; set; }
+
+        public DbSet<Account> Accounts { get; set; }
+        public DbSet<DebitAccount> DebitAccounts { get; set; }
+        public DbSet<CreditAccount> CreditAccounts { get; set; }
+        public DbSet<DepositAccount> DepositAccounts { get; set; }
+
+        public long CurrentTimeMillis { get; set; } = 0;
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -26,7 +32,8 @@ namespace Banks
             // SetInitializer();
             // base("server=localhost;port=3306;database=wordpress;uid=root;password=") not work
             // optionsBuilder.UseInMemoryDatabase("BanksDB");
-            optionsBuilder.UseMySQL("server=localhost;port=3306;database=BanksDB;uid=root;password=Welcometo56");
+            // optionsBuilder.UseMySQL("");
+            optionsBuilder.UseSqlite("Filename=banks.db");
         }
     }
 }

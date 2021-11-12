@@ -20,10 +20,5 @@ namespace Banks.Entities
             get => _person;
             set => _person = value ?? throw new ArgumentNullException(nameof(value));
         }
-
-        // public decimal Amount()
-        // {
-        //     return Bank.CentralBank.GetAccountAmount(this);
-        // }
     }
 }

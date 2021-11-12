@@ -1,6 +1,4 @@
-﻿using Banks.UI.Commands;
-
-namespace Shops.Commands
+﻿namespace Banks.UI.Commands
 {
     public class QuitCommand : Command
     {

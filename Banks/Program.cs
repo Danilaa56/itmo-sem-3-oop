@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
+using Banks.Tools;
 using Banks.UI;
 using Banks.UI.Commands;
-using Shops.Commands;
 
 namespace Banks
 {
@@ -11,15 +10,14 @@ namespace Banks
     {
         private static ICli _cli = new Cli();
 
-        // private static Context _context = new Context();
         private static Dictionary<string, Command> _commands = new Dictionary<string, Command>();
 
         private static void Main()
         {
-            using (var db = new BanksDbContext())
+            using (var db = new DataContext())
             {
                 db.Database.EnsureCreated();
-                Console.WriteLine(db.Banks.ToList().First().Subscribers.Count);
+                // Console.WriteLine(db.Banks.ToList().First().Subscribers.Count);
             }
 
             _commands["bank"] = new BankCommand(_cli);
@@ -45,7 +43,7 @@ namespace Banks
                         if (response.ShouldExit)
                             break;
                     }
-                    catch (Exception e)
+                    catch (BankException e)
                     {
                         _cli.WriteLine(e.Message);
                         _cli.WriteLine(e.StackTrace);

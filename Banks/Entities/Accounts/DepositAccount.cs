@@ -1,35 +1,26 @@
-﻿using Banks.Tools;
+﻿using Banks.BLL;
 
 namespace Banks.Entities.Accounts
 {
     public class DepositAccount : BankAccount
     {
-        public DepositAccount(Account account, long unlockTimeUtc)
-            : base(account)
+        public long UnlockTimeMs { get; set; }
+
+        public override decimal CommissionTopUp(decimal amountNow, decimal amountTransferring)
         {
-            UnlockTimeUtc = unlockTimeUtc;
+            return 0;
         }
 
-        public decimal PercentForRemains => Bank.DepositPercentForRemains(Amount);
-        public long UnlockTimeUtc { get; }
-
-        public override decimal AmountAvailable()
+        public override decimal CommissionWithdraw(decimal amountNow, decimal amountTransferring)
         {
-            if (CentralBank.CurrentTimeMillis() < UnlockTimeUtc)
+            return 0;
+        }
+
+        public override decimal AmountAvailable(decimal amountNow)
+        {
+            if (TimeLogic.CurrentTimeMillis() < UnlockTimeMs)
                 return 0;
-            return Amount;
-        }
-
-        public override decimal CommissionTopUp(decimal amount)
-        {
-            return 0;
-        }
-
-        public override decimal CommissionWithdraw(decimal amount)
-        {
-            if (amount > AmountAvailable())
-                throw new BankException($"Such amount of money={amount} is not available for the account now");
-            return 0;
+            return amountNow;
         }
     }
 }

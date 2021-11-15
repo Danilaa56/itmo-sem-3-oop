@@ -1,31 +1,20 @@
-﻿using Banks.Tools;
-
-namespace Banks.Entities.Accounts
+﻿namespace Banks.Entities.Accounts
 {
     public class DebitAccount : BankAccount
     {
-        public DebitAccount(Account account)
-            : base(account)
-        {
-        }
-
-        public decimal PercentForRemains => Bank.DebitPercentForRemains;
-
-        public override decimal AmountAvailable()
-        {
-            return Amount;
-        }
-
-        public override decimal CommissionTopUp(decimal amount)
+        public override decimal CommissionTopUp(decimal amountNow, decimal amountTransferring)
         {
             return 0;
         }
 
-        public override decimal CommissionWithdraw(decimal amount)
+        public override decimal CommissionWithdraw(decimal amountNow, decimal amountTransferring)
         {
-            if (amount > AmountAvailable())
-                throw new BankException($"Such amount of money={amount} is not available for the account");
             return 0;
+        }
+
+        public override decimal AmountAvailable(decimal amountNow)
+        {
+            return amountNow;
         }
     }
 }

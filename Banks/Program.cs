@@ -17,13 +17,16 @@ namespace Banks
             using (var db = new DataContext())
             {
                 db.Database.EnsureCreated();
-                // Console.WriteLine(db.Banks.ToList().First().Subscribers.Count);
             }
 
+            _commands["account"] = new AccountCommand();
             _commands["bank"] = new BankCommand(_cli);
+            _commands["default"] = new DefaultCommand();
             _commands["person"] = new PersonCommand();
-            // _commands["time"] = new TimeCommand(_context);
             _commands["quit"] = new QuitCommand();
+            _commands["reset"] = new ResetCommand();
+            _commands["time"] = new TimeCommand();
+            _commands["transaction"] = new TransactionCommand();
 
             PrintWelcomeMessage();
 
@@ -55,8 +58,6 @@ namespace Banks
                     PrintCommands();
                 }
             }
-
-            // _context.Dispose();
         }
 
         private static string[] ReadCommand()
@@ -105,13 +106,13 @@ namespace Banks
             _cli.WriteLine("Welcome to...");
             _cli.WriteLine("================================================================================");
             _cli.WriteLine("==                                                                            ==");
-            _cli.WriteLine("==     =====       ======   ===   ==   ==  ==    ======                       ==");
-            _cli.WriteLine("==     ==  ==     ==   ==   ====  ==   == ==    ==    ==                      ==");
-            _cli.WriteLine("==     ==  ==    ==    ==   ====  ==   ====     ==                            ==");
-            _cli.WriteLine("==     ======    ========   === = ==   ===       ======                       ==");
-            _cli.WriteLine("==     ==   ==   ==    ==   ==   ===   ====           ==                      ==");
-            _cli.WriteLine("==     ==   ==   ==    ==   ==   ===   == ==    ==    ==                      ==");
-            _cli.WriteLine("==     ======   ===    ==   ==    ==   ==  ==    ======                       ==");
+            _cli.WriteLine("==             =====       ======   ===   ==   ==  ==    ======               ==");
+            _cli.WriteLine("==             ==  ==     ==   ==   ====  ==   == ==    ==    ==              ==");
+            _cli.WriteLine("==             ==  ==    ==    ==   ====  ==   ====     ==                    ==");
+            _cli.WriteLine("==             ======    ========   === = ==   ===       ======               ==");
+            _cli.WriteLine("==             ==   ==   ==    ==   ==   ===   ====           ==              ==");
+            _cli.WriteLine("==             ==   ==   ==    ==   ==   ===   == ==    ==    ==              ==");
+            _cli.WriteLine("==             ======   ===    ==   ==    ==   ==  ==    ======               ==");
             _cli.WriteLine("==                                                                            ==");
             _cli.WriteLine("================================================================================");
             _cli.WriteLine("These commands are available:");

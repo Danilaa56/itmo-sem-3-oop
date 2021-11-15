@@ -1,38 +1,20 @@
-﻿using System;
-using Banks.Tools;
-
-namespace Banks.Entities.Accounts
+﻿namespace Banks.Entities.Accounts
 {
     public class CreditAccount : BankAccount
     {
-        public CreditAccount(Account account)
-            : base(account)
+        public override decimal CommissionTopUp(decimal amountNow, decimal amountTransferring)
         {
+            return amountNow < 0 ? Account.Bank.CreditCommission : 0;
         }
 
-        public decimal CreditLimit => Bank.CreditLimit;
-        public decimal Commission => Bank.CreditCommission;
-
-        public override decimal AmountAvailable()
+        public override decimal CommissionWithdraw(decimal amountNow, decimal amountTransferring)
         {
-            decimal amountAvailable = Amount;
-            decimal currentCommission = amountAvailable < 0 ? Commission : 0;
-            return amountAvailable + Bank.CreditLimit - currentCommission;
+            return amountNow < 0 ? Account.Bank.CreditCommission : 0;
         }
 
-        public override decimal CommissionTopUp(decimal amount)
+        public override decimal AmountAvailable(decimal amountNow)
         {
-            return Amount < 0 ? Commission : 0;
-        }
-
-        public override decimal CommissionWithdraw(decimal amount)
-        {
-            decimal amountAvailable = Amount;
-            decimal currentCommission = amountAvailable < 0 ? Commission : 0;
-            amountAvailable += CreditLimit - currentCommission;
-            if (amount > amountAvailable)
-                throw new BankException($"Such amount of money={amount} is not available for the account");
-            return currentCommission;
+            return amountNow + Account.Bank.CreditLimit - CommissionWithdraw(amountNow, 0);
         }
     }
 }

@@ -4,13 +4,7 @@ namespace Banks.Entities.Transactions
 {
     public class TransactionCorrection : Transaction
     {
-        public TransactionCorrection(Account account, decimal correction)
-            : base(account, TransactionType.Correction)
-        {
-            Correction = correction;
-        }
-
-        public decimal Correction { get; }
+        public decimal Correction { get; set; }
 
         public override void Process(Dictionary<Account, decimal> accountToMoney)
         {

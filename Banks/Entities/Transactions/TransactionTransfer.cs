@@ -1,38 +1,39 @@
 ﻿using System;
 using System.Collections.Generic;
-using Banks.Tools;
 
 namespace Banks.Entities.Transactions
 {
     public class TransactionTransfer : Transaction
     {
-        public TransactionTransfer(
-            Account account,
-            decimal amount,
-            decimal commission,
-            Account receiverAccount,
-            decimal receiverAmount,
-            decimal receiverCommission)
-            : base(account, TransactionType.Transfer)
+        private decimal _amount;
+        private decimal _receiverAmount;
+
+        public decimal Amount
         {
-            if (amount <= 0)
-                throw new ArgumentException("Amount must be positive", nameof(amount));
-            Amount = amount;
-            Commission = commission;
-            ReceiverAccount = receiverAccount ?? throw new ArgumentNullException(nameof(receiverAccount));
-            if (receiverAccount.Equals(account))
-                throw new BankException("Receiver and sender cannot be the same");
-            if (receiverAmount <= 0)
-                throw new ArgumentException("Receiver amount must be positive", nameof(receiverAmount));
-            ReceiverAmount = receiverAmount;
-            ReceiverCommission = receiverCommission;
+            get => _amount;
+            set
+            {
+                if (value <= 0)
+                    throw new ArgumentException("Amount must be positive", nameof(value));
+                _amount = value;
+            }
         }
 
-        public decimal Amount { get; }
-        public decimal Commission { get; }
-        public Account ReceiverAccount { get; }
-        public decimal ReceiverAmount { get; }
-        public decimal ReceiverCommission { get; }
+        public decimal Commission { get; set; }
+        public Account ReceiverAccount { get; set; }
+
+        public decimal ReceiverAmount
+        {
+            get => _receiverAmount;
+            set
+            {
+                if (value <= 0)
+                    throw new ArgumentException("Amount must be positive", nameof(value));
+                _receiverAmount = value;
+            }
+        }
+
+        public decimal ReceiverCommission { get; set; }
 
         public override void Process(Dictionary<Account, decimal> accountToMoney)
         {

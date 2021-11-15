@@ -33,7 +33,7 @@ namespace Banks.UI.Commands
         private CommandResponse Register(string[] args)
         {
             if (args.Length is < 4 or > 6)
-                return Response("person create PERSON_NAME PERSON_SURNAME [ADDRESS] [PASSPORT_ID]");
+                return Response("person register PERSON_NAME PERSON_SURNAME [ADDRESS] [PASSPORT_ID]");
 
             string address = args.Length >= 5 ? args[4] : null;
             string passportId = args.Length >= 6 ? args[5] : null;
@@ -69,7 +69,7 @@ namespace Banks.UI.Commands
         private CommandResponse Unregister(string[] args)
         {
             if (args.Length != 3)
-                return Response("person destroy PERSON_ID");
+                return Response("person unregister PERSON_ID");
 
             PersonLogic.Destroy(int.Parse(args[2]));
             return Response($"Person with id '{args[2]}' was unregistered");
@@ -77,6 +77,8 @@ namespace Banks.UI.Commands
 
         private CommandResponse List(string[] args)
         {
+            if (args.Length != 2)
+                return Response("person list");
             List<Person> persons = PersonLogic.List();
 
             var builder = CommandResponse.Builder();

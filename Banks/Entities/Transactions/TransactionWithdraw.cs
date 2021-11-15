@@ -5,26 +5,29 @@ namespace Banks.Entities.Transactions
 {
     public class TransactionWithdraw : Transaction
     {
-        public TransactionWithdraw(Account account, decimal amount, decimal commission)
-            : base(account, TransactionType.Withdraw)
+        private decimal _amount;
+
+        public decimal Amount
         {
-            if (amount <= 0)
-                throw new ArgumentException("Amount must be positive", nameof(amount));
-            Amount = amount;
-            Commission = commission;
+            get => _amount;
+            set
+            {
+                if (value <= 0)
+                    throw new ArgumentException("Amount must be positive", nameof(value));
+                _amount = value;
+            }
         }
 
-        public decimal Amount { get; }
-        public decimal Commission { get; }
+        public decimal Commission { get; set; }
 
         public override void Process(Dictionary<Account, decimal> accountToMoney)
         {
-            accountToMoney[Account] -= Amount + Commission;
+            accountToMoney[Account] -= Amount - Commission;
         }
 
         public override void Reverse(Dictionary<Account, decimal> accountToMoney)
         {
-            accountToMoney[Account] += Amount + Commission;
+            accountToMoney[Account] += Amount - Commission;
         }
     }
 }

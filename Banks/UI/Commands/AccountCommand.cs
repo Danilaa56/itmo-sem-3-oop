@@ -1,12 +1,10 @@
-﻿using System;
-using Banks.BLL;
-using Banks.Entities.Accounts;
+﻿using Banks.BLL;
 
 namespace Banks.UI.Commands
 {
     public class AccountCommand : Command
     {
-        private CommandResponse _usage = Response("account <register|change|unregister|list>");
+        private CommandResponse _usage = Response("account <create|destroy|topup|withdraw|transfer|amount>");
 
         public override CommandResponse ProcessCommand(string[] args)
         {
@@ -17,14 +15,18 @@ namespace Banks.UI.Commands
 
             switch (args[1].ToLower())
             {
+                case "amount":
+                    return Amount(args);
                 case "create":
                     return Create(args);
-                // case "change":
-                //     return Change(args);
-                // case "unregister":
-                //     return Unregister(args);
-                // case "list":
-                //     return List(args);
+                case "destroy":
+                    return Destroy(args);
+                case "topup":
+                    return TopUp(args);
+                case "transfer":
+                    return Transfer(args);
+                case "withdraw":
+                    return Withdraw(args);
                 default:
                     return _usage;
             }
@@ -32,57 +34,89 @@ namespace Banks.UI.Commands
 
         private CommandResponse Create(string[] args)
         {
+            CommandResponse usage = Response("account create BANK_ID PERSON_ID <credit|debit|deposit>");
             if (args.Length != 5)
-                return Response("account create BANK_ID PERSON_ID <credit|debit|deposit>");
+                return usage;
 
-            if (!Enum.TryParse(args[4], out BankAccountType accountType))
-                return Response("account create BANK_ID PERSON_ID <credit|debit|deposit>");
+            int bankId = int.Parse(args[2]);
+            int personId = int.Parse(args[3]);
 
-            int id = AccountLogic.Create(int.Parse(args[2]), int.Parse(args[3]), accountType);
-            return Response($"Account was created, id: {id}");
+            int accountId;
+            switch (args[4].ToLower())
+            {
+                case "debit":
+                    accountId = AccountLogic.CreateDebit(bankId, personId);
+                    break;
+                case "credit":
+                    accountId = AccountLogic.CreateCredit(bankId, personId);
+                    break;
+                case "deposit":
+                    accountId = AccountLogic.CreateDeposit(bankId, personId);
+                    break;
+                default:
+                    return usage;
+            }
+
+            return Response($"Account was created, id: {accountId}");
         }
 
-        // private CommandResponse Change(string[] args)
-        // {
-        //     CommandResponse usage = Response("person change <address|passportId> PERSON_ID [NEW_VALUE]");
-        //
-        //     if (args.Length < 2 || args.Length > 6)
-        //         return usage;
-        //
-        //     int id = int.Parse(args[3]);
-        //     string value = args.Length == 5 ? args[4] : null;
-        //     switch (args[2].ToLower())
-        //     {
-        //         case "address":
-        //             PersonLogic.ChangeAddress(id, value);
-        //             break;
-        //         case "passportid":
-        //             PersonLogic.ChangePassportId(id, value);
-        //             break;
-        //         default:
-        //             return usage;
-        //     }
-        //
-        //     return Response($"Successfully changed {args[2].ToLower()}");
-        // }
-        //
-        // private CommandResponse Unregister(string[] args)
-        // {
-        //     if (args.Length != 3)
-        //         return Response("person destroy PERSON_ID");
-        //
-        //     PersonLogic.Destroy(int.Parse(args[2]));
-        //     return Response($"Person with id '{args[2]}' was unregistered");
-        // }
-        //
-        // private CommandResponse List(string[] args)
-        // {
-        //     List<Person> persons = PersonLogic.List();
-        //
-        //     var builder = CommandResponse.Builder();
-        //     builder.WriteLine($"Persons count: {persons.Count}");
-        //     builder.WriteLine(Table(persons));
-        //     return builder.Build();
-        // }
+        private CommandResponse TopUp(string[] args)
+        {
+            CommandResponse usage = Response("account topup ACCOUNT_ID AMOUNT");
+            if (args.Length != 4)
+                return usage;
+
+            int accountId = int.Parse(args[2]);
+            decimal amount = decimal.Parse(args[3]);
+
+            AccountLogic.TopUp(accountId, amount);
+
+            return Response($"Account was topped up");
+        }
+
+        private CommandResponse Withdraw(string[] args)
+        {
+            CommandResponse usage = Response("account withdraw ACCOUNT_ID AMOUNT");
+            if (args.Length != 4)
+                return usage;
+
+            int accountId = int.Parse(args[2]);
+            decimal amount = decimal.Parse(args[3]);
+
+            AccountLogic.Withdraw(accountId, amount);
+
+            return Response($"Amount was withdrew from the account");
+        }
+
+        private CommandResponse Transfer(string[] args)
+        {
+            CommandResponse usage = Response("account transfer ACCOUNT_SENDER_ID ACCOUNT_RECEIVER_ID AMOUNT");
+            if (args.Length != 5)
+                return usage;
+
+            int senderId = int.Parse(args[2]);
+            int receiverId = int.Parse(args[3]);
+            decimal amount = decimal.Parse(args[4]);
+
+            AccountLogic.Transfer(senderId, receiverId, amount);
+
+            return Response($"Account was topped up");
+        }
+
+        private CommandResponse Destroy(string[] args)
+        {
+            if (args.Length != 3)
+                return Response("account destroy ACCOUNT_ID");
+            AccountLogic.Destroy(int.Parse(args[2]));
+            return Response($"Account {args[2]} was was destroyed");
+        }
+
+        private CommandResponse Amount(string[] args)
+        {
+            if (args.Length != 3)
+                return Response("account amount ACCOUNT_ID");
+            decimal amount = AccountLogic.AmountAt(int.Parse(args[2]));
+            return Response($"Amount at account {args[2]}: {amount}");
+        }
     }
 }

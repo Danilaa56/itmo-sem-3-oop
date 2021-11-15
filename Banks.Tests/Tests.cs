@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
+using Banks.BLL;
 using Banks.Entities;
 using Banks.Entities.Accounts;
 using NUnit.Framework;
@@ -9,113 +9,131 @@ namespace Banks.Tests
     [TestFixture]
     public class Tests
     {
-        private CentralBank _centralBank;
-        private Bank _bank;
-        private Person _person;
-
         [SetUp]
         public void Setup()
         {
-            _centralBank = new CentralBank();
-            var depositLevels = new Dictionary<decimal, decimal> {{50000, 3.5M}, {10000, 4M}};
-            _bank = new Bank(
-                _centralBank,
+            ServiceLogic.Reset();
+            BankLogic.RegisterBank(
                 "Sample bank",
                 3.65M,
                 1000,
                 10,
                 10,
-                depositLevels,
-                Bank.Month,
+                new Dictionary<decimal, decimal>(),
+                TimeLogic.Month,
                 100);
-            _person = Person.Builder("Ivan", "Ivanov").Address("ul. Pushkina").PassportId("multi").Build();
+            PersonLogic.Create("Ivan", "Ivanov", "ul. Pushkina", "multi");
         }
 
         [Test]
         public void DebitAccountBelowZero()
         {
-            DebitAccount bankAccount = _bank.CreateDebitAccount(_person);
-            bankAccount.TopUp(100);
+            int accountId = AccountLogic.CreateDebit(1, 1);
+            AccountLogic.TopUp(accountId, 100);
 
-            Assert.Catch(() => bankAccount.Withdraw(150));
+            Assert.Catch(() => AccountLogic.Withdraw(accountId, 150));
         }
 
         [Test]
         public void CreateDebitAccountAndTopItUp()
         {
-            DebitAccount bankAccount = _bank.CreateDebitAccount(_person);
-            bankAccount.TopUp(100);
+            int accountId = AccountLogic.CreateDebit(1, 1);
+            AccountLogic.TopUp(accountId, 100);
 
-            Assert.AreEqual(100, bankAccount.Amount);
-            Assert.AreEqual(2, _centralBank.Transactions().Count);
+            Assert.AreEqual(100, AccountLogic.AmountAt(accountId));
+            {
+                using var db = new DataContext();
+                Assert.AreEqual(2, db.Transactions.Count);
+            }
         }
 
         [Test]
         public void TestCreditAccount()
         {
-            CreditAccount bankAccount = _bank.CreateCreditAccount(_person);
-            Assert.AreEqual(1000, bankAccount.AmountAvailable());
+            int accountId = AccountLogic.CreateCredit(1, 1);
+            {
+                using var db = new DataContext();
+                BankAccount account = db.BankAccountById(accountId);
+                Assert.AreEqual(db.BankById(1).CreditLimit, account.AmountAvailable(0));
+            }
 
-            bankAccount.Withdraw(100);
-            Assert.AreEqual(-100, bankAccount.Amount);
-            Assert.AreEqual(890, bankAccount.AmountAvailable());
+            decimal withdrawAmount = 100;
+            AccountLogic.Withdraw(accountId, withdrawAmount);
+            {
+                using var db = new DataContext();
+                BankAccount account = db.BankAccountById(accountId);
+                Bank bank = db.BankById(1);
 
-            bankAccount.TopUp(50);
-            Assert.AreEqual(-60, bankAccount.Amount);
-            Assert.AreEqual(930, bankAccount.AmountAvailable());
+                decimal amountAtAccount = db.AmountAt(account.Account);
+                Assert.AreEqual(-withdrawAmount, amountAtAccount);
+                Assert.AreEqual(bank.CreditLimit - withdrawAmount - bank.CreditCommission,
+                    account.AmountAvailable(amountAtAccount));
+            }
 
-            bankAccount.TopUp(100);
-            Assert.AreEqual(30, bankAccount.Amount);
-            Assert.AreEqual(1030, bankAccount.AmountAvailable());
+            decimal topUpAmount = 50;
+            AccountLogic.TopUp(accountId, topUpAmount);
+            {
+                using var db = new DataContext();
+                BankAccount account = db.BankAccountById(accountId);
+                Bank bank = db.BankById(1);
 
-            bankAccount.TopUp(100);
-            Assert.AreEqual(130, bankAccount.Amount);
-            Assert.AreEqual(1130, bankAccount.AmountAvailable());
+                decimal amountAtAccount = db.AmountAt(account.Account);
+                Assert.AreEqual(-withdrawAmount - bank.CreditCommission + topUpAmount, amountAtAccount);
+                Assert.AreEqual(bank.CreditLimit - withdrawAmount + topUpAmount - bank.CreditCommission * 2,
+                    account.AmountAvailable(amountAtAccount));
+            }
         }
-        
+
         [Test]
         public void AnonLimitTest()
         {
-            Person personWithoutAddress = Person.Builder("Ya", "Ya").PassportId("4016").Build();
-            
-            DebitAccount bankAccount = _bank.CreateDebitAccount(personWithoutAddress);
-            bankAccount.TopUp(1000);
+            int personWithoutAddressId = PersonLogic.Create("Ya", "Ya", null, "4016");
+            int accountId = AccountLogic.CreateDebit(1, personWithoutAddressId);
+
+            decimal anonLimit;
+            using (var db = new DataContext())
+            {
+                anonLimit = db.BankById(1).AnonLimit;
+            }
+
+            AccountLogic.TopUp(accountId, anonLimit * 10);
 
             Assert.DoesNotThrow(() =>
             {
-                bankAccount.Withdraw(100);
+                AccountLogic.Withdraw(accountId, anonLimit);
             });
-            
+
             Assert.Catch(() =>
             {
-                bankAccount.Withdraw(101);
+                AccountLogic.Withdraw(accountId, anonLimit + 1.1M);
             });
         }
-        
+
         [Test]
         public void CancelTest()
         {
-            DebitAccount bankAccount = _bank.CreateDebitAccount(_person);
-            bankAccount.TopUp(100);
-            
-            Assert.AreEqual(100, bankAccount.Amount);
-            
-            _centralBank.CancelTransaction(_centralBank.Transactions().Last());
+            int accountId = AccountLogic.CreateDebit(1, 1);
 
-            Assert.AreEqual(0, bankAccount.Amount);
+            int transactionId = AccountLogic.TopUp(accountId, 100);
+            Assert.AreEqual(100, AccountLogic.AmountAt(accountId));
+
+            TransactionLogic.Cancel(transactionId);
+            Assert.AreEqual(0, AccountLogic.AmountAt(accountId));
+
+            Assert.Catch(() => TransactionLogic.Cancel(transactionId));
         }
-        
+
         [Test]
         public void RotateTimeTest()
         {
-            DebitAccount bankAccount = _bank.CreateDebitAccount(_person);
-            bankAccount.TopUp(10000);
-            
-            _centralBank.TimePassed(Bank.Month + 1);
-            Assert.AreEqual(10030, bankAccount.Amount);
-            
-            _centralBank.TimePassed(Bank.Month + 1);
-            Assert.AreEqual(10060.09M, bankAccount.Amount);
+            int accountId = AccountLogic.CreateDebit(1, 1);
+            AccountLogic.TopUp(accountId, 10000);
+
+            TimeLogic.RotateTime(TimeLogic.Month + 1);
+            Assert.AreEqual(10030, AccountLogic.AmountAt(accountId));
+
+            TimeLogic.RotateTime(TimeLogic.Month + 1);
+            Assert.AreEqual(10060.09M, AccountLogic.AmountAt(accountId));
         }
     }
 }

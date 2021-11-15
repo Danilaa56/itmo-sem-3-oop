@@ -10,7 +10,7 @@ namespace Banks.UI.Commands
         private ICli _cli;
 
         private CommandResponse _usage =
-            Response("bank <register|getsubscribers|unregister|subscribe|unsubscribe|list>");
+            Response("bank <register|getsubscribers|unregister|subscribe|unsubscribe|list|change>");
 
         public BankCommand(ICli cli)
         {
@@ -38,6 +38,8 @@ namespace Banks.UI.Commands
                     return Unsubscribe(args);
                 case "list":
                     return List(args);
+                case "change":
+                    return Change(args);
                 default:
                     return _usage;
             }
@@ -104,7 +106,7 @@ namespace Banks.UI.Commands
                     creditCommission,
                     minDepositPercentForRemains,
                     depositLevels,
-                    depositTime,
+                    depositTime * 1000,
                     anonLimit);
 
                 return Response($"Bank was created, id - {id}");
@@ -168,6 +170,44 @@ namespace Banks.UI.Commands
         private CommandResponse Cancel()
         {
             return Response("Cancelled");
+        }
+
+        private CommandResponse Change(string[] args)
+        {
+            var usage = Response(
+                "bank change <debitpercent|creditlimit|creditcommission|mindepositpercent|deposittime|anonlimit> BANK_ID NEW_VALUE");
+            if (args.Length != 5)
+            {
+                return usage;
+            }
+
+            int bankId = int.Parse(args[3]);
+
+            switch (args[2])
+            {
+                case "debitpercent":
+                    BankLogic.ChangeDebitPercent(bankId, decimal.Parse(args[4]));
+                    break;
+                case "creditlimit":
+                    BankLogic.ChangeCreditLimit(bankId, decimal.Parse(args[4]));
+                    break;
+                case "creditcommission":
+                    BankLogic.ChangeCreditCommission(bankId, decimal.Parse(args[4]));
+                    break;
+                case "mindepositpercent":
+                    BankLogic.ChangeMinDepositPercent(bankId, decimal.Parse(args[4]));
+                    break;
+                case "deposittime":
+                    BankLogic.ChangeDepositTime(bankId, long.Parse(args[4]) * 1000);
+                    break;
+                case "anonlimit":
+                    BankLogic.ChangeAnonLimit(bankId, decimal.Parse(args[4]));
+                    break;
+                default:
+                    return usage;
+            }
+
+            return Response("Bank was successfully changed");
         }
     }
 }

@@ -80,10 +80,10 @@ namespace Banks.BLL
             Account account = db.AccountById(accountId);
 
             if (!TryDestroyAccount(db.CreditAccounts, accountId)
-                || !TryDestroyAccount(db.DebitAccounts, accountId)
-                || !TryDestroyAccount(db.DepositAccounts, accountId))
+                && !TryDestroyAccount(db.DebitAccounts, accountId)
+                && !TryDestroyAccount(db.DepositAccounts, accountId))
             {
-                throw new BankException("There is no account with such id");
+                throw new BankException("There is no bank account with such id");
             }
 
             var transaction = new TransactionDestroy()
@@ -94,7 +94,7 @@ namespace Banks.BLL
             };
             db.DestroyTransactions.Add(transaction);
 
-            db.Accounts.Remove(db.AccountById(accountId));
+            db.Accounts.Remove(account);
             db.SaveChanges();
             return transaction.Id;
         }

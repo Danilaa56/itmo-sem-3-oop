@@ -118,9 +118,6 @@ namespace Banks
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            // base("server=localhost;port=3306;database=wordpress;uid=root;password=") not work
-            // optionsBuilder.UseInMemoryDatabase("BanksDB");
-            // optionsBuilder.UseMySQL("");
             optionsBuilder.UseSqlite("Filename=banks.db");
         }
     }

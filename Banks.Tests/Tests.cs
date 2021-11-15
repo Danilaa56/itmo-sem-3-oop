@@ -41,8 +41,8 @@ namespace Banks.Tests
             AccountLogic.TopUp(accountId, 100);
 
             Assert.AreEqual(100, AccountLogic.AmountAt(accountId));
+            using (var db = new DataContext())
             {
-                using var db = new DataContext();
                 Assert.AreEqual(2, db.Transactions.Count);
             }
         }
@@ -59,8 +59,8 @@ namespace Banks.Tests
 
             decimal withdrawAmount = 100;
             AccountLogic.Withdraw(accountId, withdrawAmount);
+            using (var db = new DataContext())
             {
-                using var db = new DataContext();
                 BankAccount account = db.BankAccountById(accountId);
                 Bank bank = db.BankById(1);
 
@@ -72,8 +72,8 @@ namespace Banks.Tests
 
             decimal topUpAmount = 50;
             AccountLogic.TopUp(accountId, topUpAmount);
+            using (var db = new DataContext())
             {
-                using var db = new DataContext();
                 BankAccount account = db.BankAccountById(accountId);
                 Bank bank = db.BankById(1);
 
@@ -98,15 +98,9 @@ namespace Banks.Tests
 
             AccountLogic.TopUp(accountId, anonLimit * 10);
 
-            Assert.DoesNotThrow(() =>
-            {
-                AccountLogic.Withdraw(accountId, anonLimit);
-            });
+            Assert.DoesNotThrow(() => AccountLogic.Withdraw(accountId, anonLimit));
 
-            Assert.Catch(() =>
-            {
-                AccountLogic.Withdraw(accountId, anonLimit + 1.1M);
-            });
+            Assert.Catch(() => AccountLogic.Withdraw(accountId, anonLimit + 1.1M));
         }
 
         [Test]

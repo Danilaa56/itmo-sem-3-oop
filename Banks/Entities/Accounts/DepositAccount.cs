@@ -1,6 +1,4 @@
-﻿using Banks.BLL;
-
-namespace Banks.Entities.Accounts
+﻿namespace Banks.Entities.Accounts
 {
     public class DepositAccount : BankAccount
     {
@@ -16,9 +14,9 @@ namespace Banks.Entities.Accounts
             return 0;
         }
 
-        public override decimal AmountAvailable(decimal amountNow)
+        public override decimal AmountAvailable(decimal amountNow, long nowMs)
         {
-            if (TimeLogic.CurrentTimeMillis() < UnlockTimeMs)
+            if (nowMs < UnlockTimeMs)
                 return 0;
             return amountNow;
         }

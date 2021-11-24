@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Banks.BLL;
 using Banks.Entities;
 
@@ -6,7 +7,13 @@ namespace Banks.UI.Commands
 {
     public class PersonCommand : Command
     {
-        private CommandResponse _usage = Response("person <register|change|unregister|list>");
+        private readonly CommandResponse _usage = Response("person <register|change|unregister|list>");
+        private readonly ApplicationContext _context;
+
+        public PersonCommand(ApplicationContext context)
+        {
+            _context = context;
+        }
 
         public override CommandResponse ProcessCommand(string[] args)
         {
@@ -38,7 +45,7 @@ namespace Banks.UI.Commands
             string address = args.Length >= 5 ? args[4] : null;
             string passportId = args.Length >= 6 ? args[5] : null;
 
-            int newPersonId = PersonLogic.Create(args[2], args[3], address, passportId);
+            Guid newPersonId = _context.Person.Create(args[2], args[3], address, passportId);
             return Response($"Person was created, id: {newPersonId}");
         }
 
@@ -49,15 +56,15 @@ namespace Banks.UI.Commands
             if (args.Length < 2 || args.Length > 6)
                 return usage;
 
-            int id = int.Parse(args[3]);
+            var id = Guid.Parse(args[3]);
             string value = args.Length == 5 ? args[4] : null;
             switch (args[2].ToLower())
             {
                 case "address":
-                    PersonLogic.ChangeAddress(id, value);
+                    _context.Person.ChangeAddress(id, value);
                     break;
                 case "passportid":
-                    PersonLogic.ChangePassportId(id, value);
+                    _context.Person.ChangePassportId(id, value);
                     break;
                 default:
                     return usage;
@@ -71,7 +78,7 @@ namespace Banks.UI.Commands
             if (args.Length != 3)
                 return Response("person unregister PERSON_ID");
 
-            PersonLogic.Destroy(int.Parse(args[2]));
+            _context.Person.Destroy(Guid.Parse(args[2]));
             return Response($"Person with id '{args[2]}' was unregistered");
         }
 
@@ -79,7 +86,7 @@ namespace Banks.UI.Commands
         {
             if (args.Length != 2)
                 return Response("person list");
-            List<Person> persons = PersonLogic.List();
+            List<Person> persons = _context.Person.List();
 
             var builder = CommandResponse.Builder();
             builder.WriteLine($"Persons count: {persons.Count}");

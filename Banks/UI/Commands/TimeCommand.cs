@@ -4,7 +4,13 @@ namespace Banks.UI.Commands
 {
     public class TimeCommand : Command
     {
-        private CommandResponse _usage = Response("time <rotate>");
+        private readonly ApplicationContext _context;
+        private readonly CommandResponse _usage = Response("time <rotate>");
+
+        public TimeCommand(ApplicationContext context)
+        {
+            _context = context;
+        }
 
         public override CommandResponse ProcessCommand(string[] args)
         {
@@ -28,7 +34,7 @@ namespace Banks.UI.Commands
                 return Response("time rotate DAYS");
 
             int days = int.Parse(args[2]);
-            TimeLogic.RotateTime(TimeLogic.Day * days);
+            _context.Time.Rotate(TimeLogic.Day * days);
 
             return Response($"{days} seconds passed");
         }

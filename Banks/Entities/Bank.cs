@@ -35,7 +35,7 @@ namespace Banks.Entities
             AnonLimit = anonLimit;
         }
 
-        public int Id { get; set; }
+        public Guid Id { get; set; }
 
         public string Name
         {

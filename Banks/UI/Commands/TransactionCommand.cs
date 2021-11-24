@@ -1,10 +1,17 @@
-﻿using Banks.BLL;
+﻿using System;
+using Banks.BLL;
 
 namespace Banks.UI.Commands
 {
     public class TransactionCommand : Command
     {
-        private CommandResponse _usage = Response("transaction <cancel>");
+        private readonly ApplicationContext _context;
+        private readonly CommandResponse _usage = Response("transaction <cancel>");
+
+        public TransactionCommand(ApplicationContext context)
+        {
+            _context = context;
+        }
 
         public override CommandResponse ProcessCommand(string[] args)
         {
@@ -27,7 +34,7 @@ namespace Banks.UI.Commands
             if (args.Length != 3)
                 return Response("transaction cancel TRANSACTION_ID");
 
-            TransactionLogic.Cancel(int.Parse(args[2]));
+            _context.Transaction.Cancel(Guid.Parse(args[2]));
 
             return Response("Transaction was successfully cancelled");
         }

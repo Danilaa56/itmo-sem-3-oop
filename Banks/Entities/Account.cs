@@ -7,7 +7,7 @@ namespace Banks.Entities
         private Bank _bank;
         private Person _person;
 
-        public int Id { get; set; }
+        public Guid Id { get; set; }
 
         public Bank Bank
         {

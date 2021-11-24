@@ -35,16 +35,16 @@ namespace Banks.Entities.Transactions
 
         public decimal ReceiverCommission { get; set; }
 
-        public override void Process(Dictionary<Account, decimal> accountToMoney)
+        public override void Process(Dictionary<Guid, decimal> accountToMoney)
         {
-            accountToMoney[Account] -= Amount + Commission;
-            accountToMoney[ReceiverAccount] += Amount - Commission;
+            accountToMoney[Account.Id] -= Amount + Commission;
+            accountToMoney[ReceiverAccount.Id] += Amount - Commission;
         }
 
-        public override void Reverse(Dictionary<Account, decimal> accountToMoney)
+        public override void Reverse(Dictionary<Guid, decimal> accountToMoney)
         {
-            accountToMoney[Account] += Amount + Commission;
-            accountToMoney[ReceiverAccount] -= Amount - Commission;
+            accountToMoney[Account.Id] += Amount + Commission;
+            accountToMoney[ReceiverAccount.Id] -= Amount - Commission;
         }
     }
 }

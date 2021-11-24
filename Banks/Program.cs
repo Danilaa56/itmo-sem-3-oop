@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Banks.BLL;
 using Banks.Tools;
 using Banks.UI;
 using Banks.UI.Commands;
@@ -8,25 +9,21 @@ namespace Banks
 {
     internal class Program
     {
-        private static ICli _cli = new Cli();
+        private static readonly ICli Cli = new Cli();
+        private static readonly ApplicationContext Context = new ApplicationContext("banks.db");
 
-        private static Dictionary<string, Command> _commands = new Dictionary<string, Command>();
+        private static readonly Dictionary<string, Command> Commands = new Dictionary<string, Command>();
 
         private static void Main()
         {
-            using (var db = new DataContext())
-            {
-                db.Database.EnsureCreated();
-            }
-
-            _commands["account"] = new AccountCommand();
-            _commands["bank"] = new BankCommand(_cli);
-            _commands["default"] = new DefaultCommand();
-            _commands["person"] = new PersonCommand();
-            _commands["quit"] = new QuitCommand();
-            _commands["reset"] = new ResetCommand();
-            _commands["time"] = new TimeCommand();
-            _commands["transaction"] = new TransactionCommand();
+            Commands["account"] = new AccountCommand(Context);
+            Commands["bank"] = new BankCommand(Context, Cli);
+            Commands["default"] = new DefaultCommand(Context);
+            Commands["person"] = new PersonCommand(Context);
+            Commands["quit"] = new QuitCommand(Context);
+            Commands["reset"] = new ResetCommand(Context);
+            Commands["time"] = new TimeCommand(Context);
+            Commands["transaction"] = new TransactionCommand(Context);
 
             PrintWelcomeMessage();
 
@@ -36,25 +33,25 @@ namespace Banks
                 if (args.Length == 0)
                     continue;
                 string commandName = args[0].ToLower();
-                if (_commands.TryGetValue(commandName, out Command command))
+                if (Commands.TryGetValue(commandName, out Command command))
                 {
                     try
                     {
                         CommandResponse response = command.ProcessCommand(args);
                         foreach (string responseLine in response.Lines)
-                            _cli.WriteLine(responseLine);
+                            Cli.WriteLine(responseLine);
                         if (response.ShouldExit)
                             break;
                     }
                     catch (BankException e)
                     {
-                        _cli.WriteLine(e.Message);
-                        _cli.WriteLine(e.StackTrace);
+                        Cli.WriteLine(e.Message);
+                        Cli.WriteLine(e.StackTrace);
                     }
                 }
                 else
                 {
-                    _cli.WriteLine("Unknown command. Try to use one of them:");
+                    Cli.WriteLine("Unknown command. Try to use one of them:");
                     PrintCommands();
                 }
             }
@@ -103,27 +100,27 @@ namespace Banks
 
         private static void PrintWelcomeMessage()
         {
-            _cli.WriteLine("Welcome to...");
-            _cli.WriteLine("================================================================================");
-            _cli.WriteLine("==                                                                            ==");
-            _cli.WriteLine("==             =====       ======   ===   ==   ==  ==    ======               ==");
-            _cli.WriteLine("==             ==  ==     ==   ==   ====  ==   == ==    ==    ==              ==");
-            _cli.WriteLine("==             ==  ==    ==    ==   ====  ==   ====     ==                    ==");
-            _cli.WriteLine("==             ======    ========   === = ==   ===       ======               ==");
-            _cli.WriteLine("==             ==   ==   ==    ==   ==   ===   ====           ==              ==");
-            _cli.WriteLine("==             ==   ==   ==    ==   ==   ===   == ==    ==    ==              ==");
-            _cli.WriteLine("==             ======   ===    ==   ==    ==   ==  ==    ======               ==");
-            _cli.WriteLine("==                                                                            ==");
-            _cli.WriteLine("================================================================================");
-            _cli.WriteLine("These commands are available:");
+            Cli.WriteLine("Welcome to...");
+            Cli.WriteLine("================================================================================");
+            Cli.WriteLine("==                                                                            ==");
+            Cli.WriteLine("==             =====       ======   ===   ==   ==  ==    ======               ==");
+            Cli.WriteLine("==             ==  ==     ==   ==   ====  ==   == ==    ==    ==              ==");
+            Cli.WriteLine("==             ==  ==    ==    ==   ====  ==   ====     ==                    ==");
+            Cli.WriteLine("==             ======    ========   === = ==   ===       ======               ==");
+            Cli.WriteLine("==             ==   ==   ==    ==   ==   ===   ====           ==              ==");
+            Cli.WriteLine("==             ==   ==   ==    ==   ==   ===   == ==    ==    ==              ==");
+            Cli.WriteLine("==             ======   ===    ==   ==    ==   ==  ==    ======               ==");
+            Cli.WriteLine("==                                                                            ==");
+            Cli.WriteLine("================================================================================");
+            Cli.WriteLine("These commands are available:");
             PrintCommands();
         }
 
         private static void PrintCommands()
         {
-            foreach (string command in _commands.Keys)
+            foreach (string command in Commands.Keys)
             {
-                _cli.WriteLine(" - " + command);
+                Cli.WriteLine(" - " + command);
             }
         }
     }

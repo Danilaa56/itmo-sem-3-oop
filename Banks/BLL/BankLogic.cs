@@ -4,13 +4,19 @@ using System.Linq;
 using Banks.Entities;
 using Banks.Entities.Accounts;
 using Banks.Tools;
-using Microsoft.EntityFrameworkCore;
 
 namespace Banks.BLL
 {
-    public static class BankLogic
+    public class BankLogic
     {
-        public static int RegisterBank(
+        private readonly ApplicationContext _context;
+
+        internal BankLogic(ApplicationContext context)
+        {
+            _context = context;
+        }
+
+        public Guid RegisterBank(
             string name,
             decimal debitPercentForRemains,
             decimal creditLimit,
@@ -27,167 +33,135 @@ namespace Banks.BLL
                 creditCommission,
                 minDepositPercentForRemains,
                 depositTimeMs,
-                anonLimit);
+                anonLimit)
+            {
+                Id = Guid.NewGuid(),
+            };
             bank.SetDepositLevels(depositPercentForRemainsLevels);
-            using var db = new DataContext();
-            db.Banks.Add(bank);
-            db.SaveChanges();
+
+            _context.Banks.Add(bank);
+
             return bank.Id;
         }
 
-        public static void UnregisterBank(int id)
+        public void UnregisterBank(Guid id)
         {
-            using var db = new DataContext();
-            db.Banks.Remove(db.BankById(id));
+            _context.Banks.Remove(ById(id));
         }
 
-        public static void Subscribe(int bankId, int personId)
+        public void Subscribe(Guid bankId, Guid personId)
         {
-            using var db = new DataContext();
-            db.BankById(bankId).SubscribeForUpdates(db.PersonById(personId));
-            db.SaveChanges();
+            ById(bankId).SubscribeForUpdates(_context.Person.ById(personId));
         }
 
-        public static void Unsubscribe(int bankId, int personId)
+        public void Unsubscribe(Guid bankId, Guid personId)
         {
-            using var db = new DataContext();
-            db.BankById(bankId).UnsubscribeFromUpdates(db.PersonById(personId));
-            db.SaveChanges();
+            ById(bankId).UnsubscribeFromUpdates(_context.Person.ById(personId));
         }
 
-        public static List<Person> GetSubscribers(int bankId)
+        public List<Person> GetSubscribers(Guid bankId)
         {
-            using var db = new DataContext();
-            return db.BankById(bankId).Subscribers;
+            return ById(bankId).Subscribers.ToList();
         }
 
-        public static List<Bank> List()
+        public List<Bank> List()
         {
-            using var db = new DataContext();
-            return db.Banks.Include(bank => bank.Subscribers).ToList();
+            return _context.Banks.ToList();
         }
 
-        public static Bank BankById(this DataContext db, int id)
+        public Bank ById(Guid id)
         {
-            return db.Banks.Include(bank => bank.Subscribers).FirstOrDefault(bank => bank.Id == id) ??
+            return _context.Banks.FirstOrDefault(bank => bank.Id == id) ??
                    throw new BankException("There is no bank with such id");
         }
 
-        public static void ThrowIfNotPresentBank(this DataContext db, int bankId)
-        {
-            if (!db.Banks.Any(bank => bank.Id == bankId))
-                throw new BankException("There is no person with such id");
-        }
-
-        public static bool CanTrust(Person person)
+        public bool CanTrust(Person person)
         {
             if (person is null)
                 throw new ArgumentNullException(nameof(person));
             return person.Address is not null && person.PassportId is not null;
         }
 
-        public static void ChangeDebitPercent(int bankId, decimal value)
+        public void ChangeDebitPercent(Guid bankId, decimal value)
         {
-            using var db = new DataContext();
-            Bank bank = db.BankById(bankId);
+            Bank bank = ById(bankId);
             bank.DebitPercentForRemains = value;
 
-            db.DebitAccounts(bank).ForEach(account =>
+            DebitAccounts(bank).ForEach(account =>
                 account.Account.Person.SendMessage($"Debit percent for remains has changed: {value}"));
-
-            db.SaveChanges();
         }
 
-        public static void ChangeCreditLimit(int bankId, decimal value)
+        public void ChangeCreditLimit(Guid bankId, decimal value)
         {
-            using var db = new DataContext();
-            Bank bank = db.BankById(bankId);
+            Bank bank = ById(bankId);
             bank.CreditLimit = value;
 
-            db.CreditAccounts(bank).ForEach(account =>
+            CreditAccounts(bank).ForEach(account =>
                 account.Account.Person.SendMessage($"Credit limit has changed: {value}"));
-
-            db.SaveChanges();
         }
 
-        public static void ChangeCreditCommission(int bankId, decimal value)
+        public void ChangeCreditCommission(Guid bankId, decimal value)
         {
-            using var db = new DataContext();
-            Bank bank = db.BankById(bankId);
+            Bank bank = ById(bankId);
             bank.CreditCommission = value;
 
-            db.CreditAccounts(bank).ForEach(account =>
+            CreditAccounts(bank).ForEach(account =>
                 account.Account.Person.SendMessage($"Credit commission has changed: {value}"));
-
-            db.SaveChanges();
         }
 
-        public static void ChangeMinDepositPercent(int bankId, decimal value)
+        public void ChangeMinDepositPercent(Guid bankId, decimal value)
         {
-            using var db = new DataContext();
-            Bank bank = db.BankById(bankId);
+            Bank bank = ById(bankId);
             bank.MinDepositPercentForRemains = value;
 
-            db.DepositAccounts(bank).ForEach(account =>
+            DepositAccounts(bank).ForEach(account =>
                 account.Account.Person.SendMessage($"Minimal deposit percent for remains has changed: {value}"));
-
-            db.SaveChanges();
         }
 
-        public static void ChangeDepositTime(int bankId, long value)
+        public void ChangeDepositTime(Guid bankId, long value)
         {
-            using var db = new DataContext();
-            Bank bank = db.BankById(bankId);
+            Bank bank = ById(bankId);
             bank.DepositTimeMs = value;
 
-            db.DepositAccounts(bank).ForEach(account =>
+            DepositAccounts(bank).ForEach(account =>
                 account.Account.Person.SendMessage($"Time to unlock deposit account has changed: {value}"));
-
-            db.SaveChanges();
         }
 
-        public static void ChangeAnonLimit(int bankId, decimal value)
+        public void ChangeAnonLimit(Guid bankId, decimal value)
         {
-            using var db = new DataContext();
-            Bank bank = db.BankById(bankId);
+            Bank bank = ById(bankId);
             bank.AnonLimit = value;
 
-            db.UntrustedAccounts(bank).ForEach(account =>
+            UntrustedAccounts(bank).ForEach(account =>
                 account.Account.Person.SendMessage($"Anonymous limit for untrusted accounts has changed: {value}"));
-
-            db.SaveChanges();
         }
 
-        private static List<BankAccount> DebitAccounts(this DataContext db, Bank bank)
+        private List<DebitAccount> DebitAccounts(Bank bank)
         {
-            return db.BankAccounts
+            return _context.DebitAccounts
                 .FindAll(account => bank.Equals(account.Account.Bank)
-                                    && bank.Subscribers.Contains(account.Account.Person)
-                                    && account is DebitAccount);
+                                    && bank.Subscribers.Contains(account.Account.Person));
         }
 
-        private static List<BankAccount> CreditAccounts(this DataContext db, Bank bank)
+        private List<CreditAccount> CreditAccounts(Bank bank)
         {
-            return db.BankAccounts
+            return _context.CreditAccounts
                 .FindAll(account => bank.Equals(account.Account.Bank)
-                                    && bank.Subscribers.Contains(account.Account.Person)
-                                    && account is CreditAccount);
+                                    && bank.Subscribers.Contains(account.Account.Person));
         }
 
-        private static List<BankAccount> DepositAccounts(this DataContext db, Bank bank)
+        private List<DepositAccount> DepositAccounts(Bank bank)
         {
-            return db.BankAccounts
+            return _context.DepositAccounts
                 .FindAll(account => bank.Equals(account.Account.Bank)
-                                    && bank.Subscribers.Contains(account.Account.Person)
-                                    && account is DepositAccount);
+                                    && bank.Subscribers.Contains(account.Account.Person));
         }
 
-        private static List<BankAccount> UntrustedAccounts(this DataContext db, Bank bank)
+        private List<BankAccount> UntrustedAccounts(Bank bank)
         {
-            return db.BankAccounts
-                .FindAll(account => bank.Equals(account.Account.Bank)
-                                    && bank.Subscribers.Contains(account.Account.Person)
-                                    && !CanTrust(account.Account.Person));
+            return _context.BankAccounts.FindAll(account => bank.Equals(account.Account.Bank)
+                                                   && bank.Subscribers.Contains(account.Account.Person)
+                                                   && !CanTrust(account.Account.Person));
         }
     }
 }

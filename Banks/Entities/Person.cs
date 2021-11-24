@@ -1,10 +1,11 @@
 ﻿using System;
+using System.ComponentModel.DataAnnotations;
 
 namespace Banks.Entities
 {
     public class Person
     {
-        private string _name;
+        private readonly string _name;
         private string _surname;
 
         public Person(string name, string surname)
@@ -13,7 +14,8 @@ namespace Banks.Entities
             Surname = surname;
         }
 
-        public int Id { get; set; }
+        [Key]
+        public Guid Id { get; set; }
 
         public string Name
         {

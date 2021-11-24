@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace Banks.Entities.Transactions
 {
@@ -6,14 +7,14 @@ namespace Banks.Entities.Transactions
     {
         public decimal Correction { get; set; }
 
-        public override void Process(Dictionary<Account, decimal> accountToMoney)
+        public override void Process(Dictionary<Guid, decimal> accountToMoney)
         {
-            accountToMoney[Account] += Correction;
+            accountToMoney[Account.Id] += Correction;
         }
 
-        public override void Reverse(Dictionary<Account, decimal> accountToMoney)
+        public override void Reverse(Dictionary<Guid, decimal> accountToMoney)
         {
-            accountToMoney[Account] -= Correction;
+            accountToMoney[Account.Id] -= Correction;
         }
     }
 }

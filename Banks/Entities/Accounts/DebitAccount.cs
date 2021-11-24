@@ -12,7 +12,7 @@
             return 0;
         }
 
-        public override decimal AmountAvailable(decimal amountNow)
+        public override decimal AmountAvailable(decimal amountNow, long nowMs)
         {
             return amountNow;
         }

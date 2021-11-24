@@ -1,10 +1,17 @@
-﻿using Banks.BLL;
+﻿using System;
+using Banks.BLL;
 
 namespace Banks.UI.Commands
 {
     public class AccountCommand : Command
     {
-        private CommandResponse _usage = Response("account <create|destroy|topup|withdraw|transfer|amount>");
+        private readonly ApplicationContext _context;
+        private readonly CommandResponse _usage = Response("account <create|destroy|topup|withdraw|transfer|amount>");
+
+        public AccountCommand(ApplicationContext context)
+        {
+            _context = context;
+        }
 
         public override CommandResponse ProcessCommand(string[] args)
         {
@@ -38,20 +45,20 @@ namespace Banks.UI.Commands
             if (args.Length != 5)
                 return usage;
 
-            int bankId = int.Parse(args[2]);
-            int personId = int.Parse(args[3]);
+            var bankId = Guid.Parse(args[2]);
+            var personId = Guid.Parse(args[3]);
 
-            int accountId;
+            Guid accountId;
             switch (args[4].ToLower())
             {
                 case "debit":
-                    accountId = AccountLogic.CreateDebit(bankId, personId);
+                    accountId = _context.Account.CreateDebit(bankId, personId);
                     break;
                 case "credit":
-                    accountId = AccountLogic.CreateCredit(bankId, personId);
+                    accountId = _context.Account.CreateCredit(bankId, personId);
                     break;
                 case "deposit":
-                    accountId = AccountLogic.CreateDeposit(bankId, personId);
+                    accountId = _context.Account.CreateDeposit(bankId, personId);
                     break;
                 default:
                     return usage;
@@ -66,10 +73,10 @@ namespace Banks.UI.Commands
             if (args.Length != 4)
                 return usage;
 
-            int accountId = int.Parse(args[2]);
+            var accountId = Guid.Parse(args[2]);
             decimal amount = decimal.Parse(args[3]);
 
-            AccountLogic.TopUp(accountId, amount);
+            _context.Account.TopUp(accountId, amount);
 
             return Response($"Account was topped up");
         }
@@ -80,10 +87,10 @@ namespace Banks.UI.Commands
             if (args.Length != 4)
                 return usage;
 
-            int accountId = int.Parse(args[2]);
+            var accountId = Guid.Parse(args[2]);
             decimal amount = decimal.Parse(args[3]);
 
-            AccountLogic.Withdraw(accountId, amount);
+            _context.Account.Withdraw(accountId, amount);
 
             return Response($"Amount was withdrew from the account");
         }
@@ -94,11 +101,11 @@ namespace Banks.UI.Commands
             if (args.Length != 5)
                 return usage;
 
-            int senderId = int.Parse(args[2]);
-            int receiverId = int.Parse(args[3]);
+            var senderId = Guid.Parse(args[2]);
+            var receiverId = Guid.Parse(args[3]);
             decimal amount = decimal.Parse(args[4]);
 
-            AccountLogic.Transfer(senderId, receiverId, amount);
+            _context.Account.Transfer(senderId, receiverId, amount);
 
             return Response($"Account was topped up");
         }
@@ -107,15 +114,15 @@ namespace Banks.UI.Commands
         {
             if (args.Length != 3)
                 return Response("account destroy ACCOUNT_ID");
-            AccountLogic.Destroy(int.Parse(args[2]));
-            return Response($"Account {args[2]} was was destroyed");
+            _context.Account.Destroy(Guid.Parse(args[2]));
+            return Response($"Account {args[2]} was destroyed");
         }
 
         private CommandResponse Amount(string[] args)
         {
             if (args.Length != 3)
                 return Response("account amount ACCOUNT_ID");
-            decimal amount = AccountLogic.AmountAt(int.Parse(args[2]));
+            decimal amount = _context.Account.AmountAt(Guid.Parse(args[2]));
             return Response($"Amount at account {args[2]}: {amount}");
         }
     }

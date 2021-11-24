@@ -7,13 +7,15 @@ namespace Banks.UI.Commands
 {
     public class BankCommand : Command
     {
-        private ICli _cli;
+        private readonly ApplicationContext _context;
+        private readonly ICli _cli;
 
-        private CommandResponse _usage =
+        private readonly CommandResponse _usage =
             Response("bank <register|getsubscribers|unregister|subscribe|unsubscribe|list|change>");
 
-        public BankCommand(ICli cli)
+        public BankCommand(ApplicationContext context, ICli cli)
         {
+            _context = context;
             _cli = cli;
         }
 
@@ -99,7 +101,7 @@ namespace Banks.UI.Commands
                 if (!_cli.Read(out decimal anonLimit))
                     return Cancel();
 
-                int id = BankLogic.RegisterBank(
+                Guid id = _context.Bank.RegisterBank(
                     name,
                     debitPercentForRemains,
                     creditLimit,
@@ -122,7 +124,7 @@ namespace Banks.UI.Commands
                 return Response("bank unregister");
             }
 
-            BankLogic.UnregisterBank(int.Parse(args[1]));
+            _context.Bank.UnregisterBank(Guid.Parse(args[1]));
             return Response("Bank was unregistered");
         }
 
@@ -131,7 +133,7 @@ namespace Banks.UI.Commands
             if (args.Length != 2)
                 return Response("bank list");
 
-            List<Bank> banks = BankLogic.List();
+            List<Bank> banks = _context.Bank.List();
 
             var builder = CommandResponse.Builder();
             builder.WriteLine($"Banks count: {banks.Count}");
@@ -144,7 +146,7 @@ namespace Banks.UI.Commands
             if (args.Length != 4)
                 return Response("bank subscribe BANK_ID PERSON_ID");
 
-            BankLogic.Subscribe(int.Parse(args[2]), int.Parse(args[3]));
+            _context.Bank.Subscribe(Guid.Parse(args[2]), Guid.Parse(args[3]));
             return Response("Person was subscribed for the bank updates");
         }
 
@@ -153,7 +155,7 @@ namespace Banks.UI.Commands
             if (args.Length != 4)
                 return Response("bank unsubscribe BANK_ID PERSON_ID");
 
-            BankLogic.Unsubscribe(int.Parse(args[2]), int.Parse(args[3]));
+            _context.Bank.Unsubscribe(Guid.Parse(args[2]), Guid.Parse(args[3]));
             return Response("Person was unsubscribed from the banks update");
         }
 
@@ -162,7 +164,7 @@ namespace Banks.UI.Commands
             if (args.Length != 3)
                 return Response("bank getsubscribers BANK_ID");
 
-            List<Person> persons = BankLogic.GetSubscribers(int.Parse(args[2]));
+            List<Person> persons = _context.Bank.GetSubscribers(Guid.Parse(args[2]));
 
             return Response(Table(persons));
         }
@@ -181,27 +183,27 @@ namespace Banks.UI.Commands
                 return usage;
             }
 
-            int bankId = int.Parse(args[3]);
+            var bankId = Guid.Parse(args[3]);
 
             switch (args[2])
             {
                 case "debitpercent":
-                    BankLogic.ChangeDebitPercent(bankId, decimal.Parse(args[4]));
+                    _context.Bank.ChangeDebitPercent(bankId, decimal.Parse(args[4]));
                     break;
                 case "creditlimit":
-                    BankLogic.ChangeCreditLimit(bankId, decimal.Parse(args[4]));
+                    _context.Bank.ChangeCreditLimit(bankId, decimal.Parse(args[4]));
                     break;
                 case "creditcommission":
-                    BankLogic.ChangeCreditCommission(bankId, decimal.Parse(args[4]));
+                    _context.Bank.ChangeCreditCommission(bankId, decimal.Parse(args[4]));
                     break;
                 case "mindepositpercent":
-                    BankLogic.ChangeMinDepositPercent(bankId, decimal.Parse(args[4]));
+                    _context.Bank.ChangeMinDepositPercent(bankId, decimal.Parse(args[4]));
                     break;
                 case "deposittime":
-                    BankLogic.ChangeDepositTime(bankId, long.Parse(args[4]) * 1000);
+                    _context.Bank.ChangeDepositTime(bankId, long.Parse(args[4]) * 1000);
                     break;
                 case "anonlimit":
-                    BankLogic.ChangeAnonLimit(bankId, decimal.Parse(args[4]));
+                    _context.Bank.ChangeAnonLimit(bankId, decimal.Parse(args[4]));
                     break;
                 default:
                     return usage;

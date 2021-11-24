@@ -1,12 +1,13 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace Banks.Entities.Transactions
 {
     public class TransactionDestroy : Transaction
     {
-        public override void Process(Dictionary<Account, decimal> accountToMoney)
+        public override void Process(Dictionary<Guid, decimal> accountToMoney)
         {
-            accountToMoney.Remove(Account);
+            accountToMoney.Remove(Account.Id);
         }
     }
 }

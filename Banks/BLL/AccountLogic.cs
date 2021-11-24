@@ -1,134 +1,128 @@
-#nullable enable
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using Backups.Tools;
 using Banks.Entities;
 using Banks.Entities.Accounts;
 using Banks.Entities.Transactions;
 using Banks.Tools;
-using Microsoft.EntityFrameworkCore;
 
 namespace Banks.BLL
 {
-    public static class AccountLogic
+    public class AccountLogic
     {
-        public static int CreateDeposit(int bankId, int personId)
-        {
-            using var db = new DataContext();
-            Account account = Create(db, bankId, personId);
+        private readonly ApplicationContext _context;
 
+        internal AccountLogic(ApplicationContext context)
+        {
+            _context = context;
+        }
+
+        public Guid CreateDeposit(Guid bankId, Guid personId)
+        {
+            Account account = Create(bankId, personId);
             var bankAccount = new DepositAccount
             {
+                Id = Guid.NewGuid(),
                 Account = account,
-                UnlockTimeMs = TimeLogic.CurrentTimeMillis() + account.Bank.DepositTimeMs,
+                UnlockTimeMs = _context.Time.CurrentTimeMillis() + account.Bank.DepositTimeMs,
             };
 
-            db.DepositAccounts.Add(bankAccount);
-            db.SaveChanges();
+            _context.DepositAccounts.Add(bankAccount);
             return bankAccount.Account.Id;
         }
 
-        public static int CreateDebit(int bankId, int personId)
+        public Guid CreateDebit(Guid bankId, Guid personId)
         {
-            using var db = new DataContext();
-            Account account = Create(db, bankId, personId);
-
+            Account account = Create(bankId, personId);
             var bankAccount = new DebitAccount()
             {
+                Id = Guid.NewGuid(),
                 Account = account,
             };
 
-            db.DebitAccounts.Add(bankAccount);
-            db.SaveChanges();
+            _context.DebitAccounts.Add(bankAccount);
             return bankAccount.Account.Id;
         }
 
-        public static int CreateCredit(int bankId, int personId)
+        public Guid CreateCredit(Guid bankId, Guid personId)
         {
-            using var db = new DataContext();
-            Account account = Create(db, bankId, personId);
-
-            var bankAccount = new CreditAccount()
+            Account account = Create(bankId, personId);
+            var bankAccount = new CreditAccount
             {
+                Id = Guid.NewGuid(),
                 Account = account,
             };
 
-            db.CreditAccounts.Add(bankAccount);
-            db.SaveChanges();
+            _context.CreditAccounts.Add(bankAccount);
             return bankAccount.Account.Id;
         }
 
-        public static int Correction(DataContext db, int accountId, decimal correction)
+        public Guid Correction(Guid accountId, decimal correction)
         {
-            BankAccount bankAccount = db.BankAccountById(accountId);
+            BankAccount bankAccount = BankAccountById(accountId);
 
             var transaction = new TransactionCorrection
             {
-                Id = db.NextTransactionId(),
+                Id = Guid.NewGuid(),
                 Account = bankAccount.Account,
                 Correction = correction,
-                DateUtcMs = TimeLogic.CurrentTimeMillis(),
+                DateUtcMs = _context.Time.CurrentTimeMillis(),
             };
-            db.CorrectionTransactions.Add(transaction);
 
-            db.SaveChanges();
+            _context.PushTransaction(transaction);
             return transaction.Id;
         }
 
-        public static int Destroy(int accountId)
+        public Guid Destroy(Guid accountId)
         {
-            using var db = new DataContext();
-            Account account = db.AccountById(accountId);
+            Account account = ById(accountId);
 
-            if (!TryDestroyAccount(db.CreditAccounts, accountId)
-                && !TryDestroyAccount(db.DebitAccounts, accountId)
-                && !TryDestroyAccount(db.DepositAccounts, accountId))
+            if (!TryDestroyAccount(_context.CreditAccounts, accountId)
+                && !TryDestroyAccount(_context.DebitAccounts, accountId)
+                && !TryDestroyAccount(_context.DepositAccounts, accountId))
             {
                 throw new BankException("There is no bank account with such id");
             }
 
             var transaction = new TransactionDestroy()
             {
-                Id = db.NextTransactionId(),
+                Id = Guid.NewGuid(),
                 Account = account,
-                DateUtcMs = TimeLogic.CurrentTimeMillis(),
+                DateUtcMs = _context.Time.CurrentTimeMillis(),
             };
-            db.DestroyTransactions.Add(transaction);
 
-            db.Accounts.Remove(account);
-            db.SaveChanges();
+            _context.PushTransaction(transaction);
+            _context.Accounts.Remove(account);
             return transaction.Id;
         }
 
-        public static int TopUp(int accountId, decimal amount)
+        public Guid TopUp(Guid accountId, decimal amount)
         {
-            using var db = new DataContext();
-
-            BankAccount bankAccount = db.BankAccountById(accountId);
+            BankAccount bankAccount = BankAccountById(accountId);
 
             var transaction = new TransactionTopUp
             {
-                Id = db.NextTransactionId(),
+                Id = Guid.NewGuid(),
                 Account = bankAccount.Account,
                 Amount = amount,
-                Commission = bankAccount.CommissionTopUp(db.AmountAt(accountId), amount),
-                DateUtcMs = TimeLogic.CurrentTimeMillis(),
+                Commission = bankAccount.CommissionTopUp(_context.AmountAtAccount(accountId), amount),
+                DateUtcMs = _context.Time.CurrentTimeMillis(),
             };
-            db.TopUpTransactions.Add(transaction);
 
-            db.SaveChanges();
+            _context.PushTransaction(transaction);
             return transaction.Id;
         }
 
-        public static int Transfer(int senderId, int receiverId, decimal amount)
+        public Guid Transfer(Guid senderId, Guid receiverId, decimal amount)
         {
-            using var db = new DataContext();
-            BankAccount senderAccount = db.BankAccountById(senderId);
-            BankAccount receiverAccount = db.BankAccountById(receiverId);
+            BankAccount senderAccount = BankAccountById(senderId);
+            BankAccount receiverAccount = BankAccountById(receiverId);
 
-            decimal amountAtSender = db.AmountAt(senderId);
-            decimal amountAtReceiver = db.AmountAt(receiverId);
+            decimal amountAtSender = _context.AmountAtAccount(senderId);
+            decimal amountAtReceiver = _context.AmountAtAccount(receiverId);
 
-            decimal amountAvailable = senderAccount.AmountAvailable(amountAtSender);
+            decimal amountAvailable = senderAccount.AmountAvailable(amountAtSender, _context.Time.CurrentTimeMillis());
             if (amountAvailable < amount)
                 throw new BackupException("There is no such amount of money available for this account");
 
@@ -136,7 +130,8 @@ namespace Banks.BLL
 
             var transaction = new TransactionTransfer
             {
-                DateUtcMs = TimeLogic.CurrentTimeMillis(),
+                Id = Guid.NewGuid(),
+                DateUtcMs = _context.Time.CurrentTimeMillis(),
                 Account = senderAccount.Account,
 
                 Amount = amount,
@@ -144,19 +139,16 @@ namespace Banks.BLL
                 ReceiverAmount = amount,
                 ReceiverCommission = receiverAccount.CommissionTopUp(amountAtReceiver, amount),
             };
-            db.TransferTransactions.Add(transaction);
 
-            db.SaveChanges();
+            _context.PushTransaction(transaction);
             return transaction.Id;
         }
 
-        public static int Withdraw(int accountId, decimal amount)
+        public Guid Withdraw(Guid accountId, decimal amount)
         {
-            using var db = new DataContext();
-
-            BankAccount account = db.BankAccountById(accountId);
-            decimal amountAtAccount = db.AmountAt(account.Account);
-            decimal amountAvailable = account.AmountAvailable(amountAtAccount);
+            BankAccount account = BankAccountById(accountId);
+            decimal amountAtAccount = _context.AmountAtAccount(account.Account.Id);
+            decimal amountAvailable = account.AmountAvailable(amountAtAccount, _context.Time.CurrentTimeMillis());
 
             if (amountAvailable < amount)
                 throw new BackupException("There is no such amount of money available for this account");
@@ -165,91 +157,71 @@ namespace Banks.BLL
 
             var transaction = new TransactionWithdraw
             {
-                DateUtcMs = TimeLogic.CurrentTimeMillis(),
+                Id = Guid.NewGuid(),
+                DateUtcMs = _context.Time.CurrentTimeMillis(),
                 Account = account.Account,
 
                 Amount = amount,
                 Commission = account.CommissionWithdraw(amountAtAccount, amount),
             };
-            db.WithdrawTransactions.Add(transaction);
 
-            db.SaveChanges();
+            _context.PushTransaction(transaction);
             return transaction.Id;
         }
 
-        public static decimal AmountAt(int accountId)
+        public decimal AmountAt(Guid accountId)
         {
-            using var db = new DataContext();
-            return db.AmountAt(accountId);
+            return _context.AmountAtAccount(accountId);
         }
 
-        public static BankAccount BankAccountById(this DataContext db, int id)
+        public BankAccount BankAccountById(Guid id)
         {
-            BankAccount? account = db.DebitAccounts
-                .Include(account => account.Account)
-                .Include(account => account.Account.Bank)
-                .Include(account => account.Account.Person)
-                .FirstOrDefault(acc => acc.Account.Id == id);
-            if (account is null)
-            {
-                account = db.CreditAccounts
-                    .Include(account => account.Account)
-                    .Include(account => account.Account.Bank)
-                    .Include(account => account.Account.Person)
-                    .FirstOrDefault(acc => acc.Account.Id == id);
-            }
-
-            if (account is null)
-            {
-                account = db.DepositAccounts
-                    .Include(account => account.Account)
-                    .Include(account => account.Account.Bank)
-                    .Include(account => account.Account.Person)
-                    .FirstOrDefault(acc => acc.Account.Id == id);
-            }
-
+            BankAccount account = _context.BankAccounts.FirstOrDefault(account => account.Account.Id == id);
             return account ?? throw new BankException("There is no bank account with such id");
         }
 
-        private static bool TryDestroyAccount<TBankAccount>(DbSet<TBankAccount> set, int id)
+        private Account ById(Guid id)
+        {
+            return _context.Accounts.FirstOrDefault(account => account.Id == id) ??
+                   throw new BankException("There is no account with such id");
+        }
+
+        private bool TryDestroyAccount<TBankAccount>(List<TBankAccount> accountList, Guid id)
             where TBankAccount : BankAccount
         {
-            TBankAccount? bankAccount = set
-                .Include(account => account.Account)
-                .FirstOrDefault(account => account.Account.Id == id);
+            TBankAccount bankAccount = accountList.FirstOrDefault(account => account.Account.Id == id);
             if (bankAccount is null)
                 return false;
-            set.Remove(bankAccount);
+            accountList.Remove(bankAccount);
             return true;
         }
 
-        private static Account Create(DataContext db, int bankId, int personId)
+        private Account Create(Guid bankId, Guid personId)
         {
-            Bank bank = db.BankById(bankId);
-            Person person = db.PersonById(personId);
+            Bank bank = _context.Bank.ById(bankId);
+            Person person = _context.Person.ById(personId);
 
             var account = new Account
             {
+                Id = Guid.NewGuid(),
                 Bank = bank,
                 Person = person,
             };
-            db.Accounts.Add(account);
+            _context.Accounts.Add(account);
 
             var transaction = new TransactionCreate
             {
-                Id = db.NextTransactionId(),
+                Id = Guid.NewGuid(),
                 Account = account,
-                DateUtcMs = TimeLogic.CurrentTimeMillis(),
+                DateUtcMs = _context.Time.CurrentTimeMillis(),
             };
-            db.CreateTransactions.Add(transaction);
-
-            db.SaveChanges();
+            _context.PushTransaction(transaction);
             return account;
         }
 
-        private static void CheckTrust(Account account, decimal amount)
+        private void CheckTrust(Account account, decimal amount)
         {
-            if (!BankLogic.CanTrust(account.Person) && amount > account.Bank.AnonLimit)
+            if (!_context.Bank.CanTrust(account.Person) && amount > account.Bank.AnonLimit)
                 throw new BackupException("Transferring this amount is restricted for anonymous accounts");
         }
     }

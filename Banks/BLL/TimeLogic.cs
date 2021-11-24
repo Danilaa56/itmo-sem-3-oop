@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using Banks.Entities;
 using Banks.Entities.Accounts;
@@ -6,48 +8,46 @@ using Banks.Entities.Transactions;
 
 namespace Banks.BLL
 {
-    public static class TimeLogic
+    public class TimeLogic
     {
+        private readonly ApplicationContext _context;
+
+        internal TimeLogic(ApplicationContext context)
+        {
+            _context = context;
+        }
+
         public static long Day => 24 * 3600 * 1000;
         public static long Month => Day * 30;
 
-        public static long CurrentTimeMillis()
+        public long CurrentTimeMillis()
         {
-            using var db = new DataContext();
-            return db.Environment().TimeMs;
+            return _context.Environment.TimeMs;
         }
 
-        public static void RotateTime(long timeMs)
+        public void Rotate(long timeMs)
         {
-            List<Bank> banks;
-            using (var db = new DataContext())
+            var amountByAccountId = _context.AmountByAccountId();
+
+            long currentTime = _context.Environment.TimeMs += timeMs;
+            List<Bank> banks = _context.Banks;
+
+            foreach (Bank bank in banks)
             {
-                var amountsByAccounts = db.AmountsByAccounts();
-
-                long currentTime = db.Environment().TimeMs += timeMs;
-                banks = db.Banks.ToList();
-
-                foreach (Bank bank in banks)
-                {
-                    // GetAccountToTransactions()
-                    Update(
-                        amountsByAccounts,
-                        db,
-                        bank,
-                        currentTime);
-                }
-
-                db.SaveChanges();
+                // GetAccountToTransactions()
+                Update(
+                    amountByAccountId,
+                    bank,
+                    currentTime);
             }
         }
 
-        private static void Update(
-            Dictionary<Account, decimal> currentAmounts,
-            DataContext db,
+        private void Update(
+            ImmutableDictionary<Guid, decimal> currentAmounts,
             Bank bank,
             long currentTimeMs)
         {
-            Dictionary<BankAccount, List<Transaction>> accountToTransactions = GetAccountToTransactions(db, bank);
+            Dictionary<BankAccount, List<Transaction>> accountToTransactions = GetAccountToTransactions(bank);
 
             foreach (KeyValuePair<BankAccount, List<Transaction>> accountToTransaction in accountToTransactions)
             {
@@ -61,10 +61,10 @@ namespace Banks.BLL
 
                 var fakeTransaction = new TransactionCorrection
                 {
-                    Id = int.MaxValue,
+                    Id = Guid.NewGuid(),
                     Account = account.Account,
                     Correction = 0,
-                    DateUtcMs = currentTimeMs,
+                    DateUtcMs = currentTimeMs + 1,
                     IsCancelled = false,
                 };
                 transactions.Add(fakeTransaction);
@@ -73,7 +73,7 @@ namespace Banks.BLL
                 int daysCount = 0;
 
                 decimal correction = 0;
-                var accountToAmount = new Dictionary<Account, decimal>();
+                var accountToAmount = new Dictionary<Guid, decimal>();
 
                 foreach (Transaction transaction in transactions)
                 {
@@ -81,19 +81,19 @@ namespace Banks.BLL
                     {
                         if (account is DebitAccount)
                         {
-                            correction += accountToAmount[account.Account] * bank.DebitPercentForRemains / 36500M;
+                            correction += accountToAmount[account.Account.Id] * bank.DebitPercentForRemains / 36500M;
                         }
                         else if (account is DepositAccount)
                         {
-                            correction += accountToAmount[account.Account] *
-                                bank.DepositPercentForRemains(accountToAmount[account.Account]) / 36500M;
+                            correction += accountToAmount[account.Account.Id] *
+                                bank.DepositPercentForRemains(accountToAmount[account.Account.Id]) / 36500M;
                         }
 
                         dayCircleTime += Day;
                         if (++daysCount >= 30)
                         {
                             daysCount -= 30;
-                            accountToAmount[account.Account] += correction;
+                            accountToAmount[account.Account.Id] += correction;
                             correction = 0;
                         }
                     }
@@ -104,25 +104,25 @@ namespace Banks.BLL
                     }
                 }
 
-                if (accountToAmount.TryGetValue(account.Account, out decimal amount))
+                if (accountToAmount.TryGetValue(account.Account.Id, out decimal amount))
                 {
-                    decimal currentAmount = currentAmounts[account.Account];
+                    decimal currentAmount = currentAmounts[account.Account.Id];
                     if (currentAmount != amount)
                     {
-                        AccountLogic.Correction(db, account.Account.Id, amount - currentAmount);
+                        _context.Account.Correction(account.Account.Id, amount - currentAmount);
                     }
                 }
             }
         }
 
-        private static Dictionary<BankAccount, List<Transaction>> GetAccountToTransactions(DataContext db, Bank bank)
+        private Dictionary<BankAccount, List<Transaction>> GetAccountToTransactions(Bank bank)
         {
             var accountToTransactions = new Dictionary<Account, List<Transaction>>();
             var bankAccounts =
-                db.BankAccounts.Where(bankAccount => bank.Equals(bankAccount.Account.Bank)).ToList();
+                _context.BankAccounts.FindAll(bankAccount => bank.Equals(bankAccount.Account.Bank));
             bankAccounts.ForEach(bankAccount => accountToTransactions[bankAccount.Account] = new List<Transaction>());
 
-            db.Transactions.ForEach(transaction =>
+            _context.Transactions.ForEach(transaction =>
             {
                 if (transaction.IsCancelled)
                     return;

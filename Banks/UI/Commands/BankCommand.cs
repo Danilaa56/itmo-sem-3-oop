@@ -1,0 +1,215 @@
+﻿using System;
+using System.Collections.Generic;
+using Banks.BLL;
+using Banks.Entities;
+
+namespace Banks.UI.Commands
+{
+    public class BankCommand : Command
+    {
+        private readonly ApplicationContext _context;
+        private readonly ICli _cli;
+
+        private readonly CommandResponse _usage =
+            Response("bank <register|getsubscribers|unregister|subscribe|unsubscribe|list|change>");
+
+        public BankCommand(ApplicationContext context, ICli cli)
+        {
+            _context = context;
+            _cli = cli;
+        }
+
+        public override CommandResponse ProcessCommand(string[] args)
+        {
+            if (args.Length == 1)
+            {
+                return _usage;
+            }
+
+            switch (args[1].ToLower())
+            {
+                case "register":
+                    return Register(args);
+                case "getsubscribers":
+                    return GetSubscribers(args);
+                case "unregister":
+                    return Unregister(args);
+                case "subscribe":
+                    return Subscribe(args);
+                case "unsubscribe":
+                    return Unsubscribe(args);
+                case "list":
+                    return List(args);
+                case "change":
+                    return Change(args);
+                default:
+                    return _usage;
+            }
+        }
+
+        private CommandResponse Register(string[] args)
+        {
+            if (args.Length != 2)
+            {
+                return Response("bank register");
+            }
+
+            if (args.Length == 2)
+            {
+                _cli.WriteLine("Enter data or empty line to cancel");
+
+                _cli.WriteLine("Name: ");
+                if (!_cli.Read(out string name))
+                    return Cancel();
+                _cli.WriteLine("Percent for remains for debit accounts: ");
+                if (!_cli.Read(out decimal debitPercentForRemains))
+                    return Cancel();
+                _cli.WriteLine("Credit limit for credit accounts: ");
+                if (!_cli.Read(out decimal creditLimit))
+                    return Cancel();
+                _cli.WriteLine("Commission for credit accounts: ");
+                if (!_cli.Read(out decimal creditCommission))
+                    return Cancel();
+
+                _cli.WriteLine("Percent for remains for deposit accounts");
+                _cli.WriteLine("It is defined with levels and minimal value, if amount on account is too small");
+                _cli.WriteLine("Each level consist of AMOUNT and PERCENT starting with this amount");
+                _cli.WriteLine("Minimal percent: ");
+                if (!_cli.Read(out decimal minDepositPercentForRemains))
+                    return Cancel();
+                _cli.WriteLine("Levels count (negative count means zero): ");
+                if (!_cli.Read(out int levelsCount))
+                    return Cancel();
+
+                var depositLevels = new Dictionary<decimal, decimal>();
+                if (depositLevels == null) throw new ArgumentNullException(nameof(depositLevels));
+                for (int i = 0; i < levelsCount; i++)
+                {
+                    _cli.WriteLine("Amount on account: ");
+                    if (!_cli.Read(out decimal key))
+                        return Cancel();
+                    _cli.WriteLine("Percent on remains: ");
+                    if (!_cli.Read(out decimal percent))
+                        return Cancel();
+                    depositLevels[key] = percent;
+                }
+
+                _cli.WriteLine("Time to unlock deposit accounts (in seconds): ");
+                if (!_cli.Read(out long depositTime))
+                    return Cancel();
+                _cli.WriteLine("Transaction limit for untrusted accounts: ");
+                if (!_cli.Read(out decimal anonLimit))
+                    return Cancel();
+
+                Guid id = _context.Bank.RegisterBank(
+                    name,
+                    debitPercentForRemains,
+                    creditLimit,
+                    creditCommission,
+                    minDepositPercentForRemains,
+                    depositLevels,
+                    depositTime * 1000,
+                    anonLimit);
+
+                return Response($"Bank was created, id - {id}");
+            }
+
+            throw new Exception("Impossible");
+        }
+
+        private CommandResponse Unregister(string[] args)
+        {
+            if (args.Length != 2)
+            {
+                return Response("bank unregister");
+            }
+
+            _context.Bank.UnregisterBank(Guid.Parse(args[1]));
+            return Response("Bank was unregistered");
+        }
+
+        private CommandResponse List(string[] args)
+        {
+            if (args.Length != 2)
+                return Response("bank list");
+
+            List<Bank> banks = _context.Bank.List();
+
+            var builder = CommandResponse.Builder();
+            builder.WriteLine($"Banks count: {banks.Count}");
+            builder.WriteLine(Table(banks));
+            return builder.Build();
+        }
+
+        private CommandResponse Subscribe(string[] args)
+        {
+            if (args.Length != 4)
+                return Response("bank subscribe BANK_ID PERSON_ID");
+
+            _context.Bank.Subscribe(Guid.Parse(args[2]), Guid.Parse(args[3]));
+            return Response("Person was subscribed for the bank updates");
+        }
+
+        private CommandResponse Unsubscribe(string[] args)
+        {
+            if (args.Length != 4)
+                return Response("bank unsubscribe BANK_ID PERSON_ID");
+
+            _context.Bank.Unsubscribe(Guid.Parse(args[2]), Guid.Parse(args[3]));
+            return Response("Person was unsubscribed from the banks update");
+        }
+
+        private CommandResponse GetSubscribers(string[] args)
+        {
+            if (args.Length != 3)
+                return Response("bank getsubscribers BANK_ID");
+
+            List<Person> persons = _context.Bank.GetSubscribers(Guid.Parse(args[2]));
+
+            return Response(Table(persons));
+        }
+
+        private CommandResponse Cancel()
+        {
+            return Response("Cancelled");
+        }
+
+        private CommandResponse Change(string[] args)
+        {
+            var usage = Response(
+                "bank change <debitpercent|creditlimit|creditcommission|mindepositpercent|deposittime|anonlimit> BANK_ID NEW_VALUE");
+            if (args.Length != 5)
+            {
+                return usage;
+            }
+
+            var bankId = Guid.Parse(args[3]);
+
+            switch (args[2])
+            {
+                case "debitpercent":
+                    _context.Bank.ChangeDebitPercent(bankId, decimal.Parse(args[4]));
+                    break;
+                case "creditlimit":
+                    _context.Bank.ChangeCreditLimit(bankId, decimal.Parse(args[4]));
+                    break;
+                case "creditcommission":
+                    _context.Bank.ChangeCreditCommission(bankId, decimal.Parse(args[4]));
+                    break;
+                case "mindepositpercent":
+                    _context.Bank.ChangeMinDepositPercent(bankId, decimal.Parse(args[4]));
+                    break;
+                case "deposittime":
+                    _context.Bank.ChangeDepositTime(bankId, long.Parse(args[4]) * 1000);
+                    break;
+                case "anonlimit":
+                    _context.Bank.ChangeAnonLimit(bankId, decimal.Parse(args[4]));
+                    break;
+                default:
+                    return usage;
+            }
+
+            return Response("Bank was successfully changed");
+        }
+    }
+}

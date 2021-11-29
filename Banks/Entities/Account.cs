@@ -7,6 +7,17 @@ namespace Banks.Entities
         private Bank _bank;
         private Person _person;
 
+        public Account(Guid id, Bank bank, Person person)
+        {
+            Id = id;
+            Bank = bank;
+            Person = person;
+        }
+
+        private Account()
+        {
+        }
+
         public Guid Id { get; set; }
 
         public Bank Bank

@@ -201,12 +201,7 @@ namespace Banks.BLL
             Bank bank = _context.Bank.ById(bankId);
             Person person = _context.Person.ById(personId);
 
-            var account = new Account
-            {
-                Id = Guid.NewGuid(),
-                Bank = bank,
-                Person = person,
-            };
+            var account = new Account(Guid.NewGuid(), bank, person);
             _context.Accounts.Add(account);
 
             var transaction = new TransactionCreate

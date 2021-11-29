@@ -34,7 +34,6 @@ namespace Banks.BLL
 
             foreach (Bank bank in banks)
             {
-                // GetAccountToTransactions()
                 Update(
                     amountByAccountId,
                     bank,

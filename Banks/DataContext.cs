@@ -33,45 +33,6 @@ namespace Banks
 
         public DbSet<Environment> Environments { get; set; } = null!;
 
-        // public decimal AmountAt(int accountId)
-        // {
-        //     return AmountAt(AccountById(accountId));
-        // }
-
-        // public decimal AmountAt(Account account)
-        // {
-        //     if (!AmountsByAccounts().TryGetValue(account, out decimal amount))
-        //     {
-        //         throw new BankException("There is no account with such id");
-        //     }
-        //
-        //     return amount;
-        // }
-
-        // public Dictionary<Account, decimal> AmountsByAccounts()
-        // {
-        //     var accountToMoney = new Dictionary<Account, decimal>();
-        //     Transactions.ForEach(transaction =>
-        //     {
-        //         if (!transaction.IsCancelled)
-        //             transaction.Process(accountToMoney);
-        //     });
-        //
-        //     return accountToMoney;
-        // }
-
-        // public Environment Environment()
-        // {
-        //     if (!Environments.Any())
-        //     {
-        //         var environment = new Environment();
-        //         Environments.Add(environment);
-        //         SaveChanges();
-        //         return environment;
-        //     }
-        //
-        //     return Environments.First();
-        // }
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             optionsBuilder.UseSqlite($"Filename={_fileName}");

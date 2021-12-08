@@ -44,6 +44,12 @@ namespace Backups.Server.Entities
                         case RepositoryRemote.ActionCode.GetStorages:
                             GetStorages();
                             break;
+                        case RepositoryRemote.ActionCode.RemoveStorage:
+                            RemoveStorage();
+                            break;
+                        case RepositoryRemote.ActionCode.ReadStorage:
+                            ReadStorage();
+                            break;
                         default:
                             UnknownActionCode();
                             break;
@@ -74,6 +80,27 @@ namespace Backups.Server.Entities
             ImmutableArray<string> storageIds = _repo.GetStorages();
             _stream.WriteStringList(storageIds);
             _logger.Info("storage ids was sent, closing connection");
+            _continueServing = false;
+        }
+
+        private void RemoveStorage()
+        {
+            _logger.Info("remove storage, reading storage id");
+            string storageId = _stream.ReadString();
+            _logger.Info($"storage id: {storageId}");
+            _repo.RemoveStorage(storageId);
+            _logger.Info("storage was removed, closing connection");
+            _continueServing = false;
+        }
+
+        private void ReadStorage()
+        {
+            _logger.Info("read storage, reading storage id");
+            string storageId = _stream.ReadString();
+            _logger.Info($"storage id: {storageId}");
+            byte[] data = _repo.ReadStorage(storageId);
+            _stream.WriteByteArray(data);
+            _logger.Info("storage was sent, closing connection");
             _continueServing = false;
         }
 

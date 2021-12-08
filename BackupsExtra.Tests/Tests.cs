@@ -1,13 +1,18 @@
-﻿using System.IO;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Backups.Entities;
 using Backups.Entities.DataObjects;
 using Backups.Entities.ObjectDistributor;
 using Backups.Entities.Repository;
+using Backups.Entities.StoragePacker;
 using Backups.Server.Entities;
+using Backups.Tools;
+using BackupsExtra.Entities;
+using BackupsExtra.Entities.Irrelevanters;
 using NUnit.Framework;
 
-namespace Backups.Tests
+namespace BackupsExtra.Tests
 {
     [TestFixture]
     public class Tests
@@ -25,40 +30,54 @@ namespace Backups.Tests
         }
 
         [Test]
-        public void TestBackupJob()
+        public void TestRestore()
         {
             IRepository repo = new RepositoryLocal($"tmp{Sep}repo");
 
-            var backupJob = new BackupJob(repo);
-            backupJob.ObjectDistributor = new SplitStorageDistributor();
-            var jobObject1 = new JobObjectLocal($"tmp{Sep}data", "file1.txt");
-            var jobObject2 = new JobObjectLocal($"tmp{Sep}data", "file2.txt");
+            File.WriteAllText($"tmp{Sep}data{Sep}tmp.txt", "Test content");
 
+            var backupJob = new BackupJobExtra(repo);
+            backupJob.ObjectDistributor = new SplitStorageDistributor();
+            var jobObject1 = new JobObjectLocal($"tmp{Sep}data", "tmp.txt");
             backupJob.Add(jobObject1);
-            backupJob.Add(jobObject2);
             RestorePoint restorePoint1 = backupJob.CreateRestorePoint();
 
-            backupJob.Remove(jobObject1);
-            RestorePoint restorePoint2 = backupJob.CreateRestorePoint();
+            File.Delete($"tmp{Sep}data{Sep}tmp.txt");
 
-            Assert.AreEqual(2, backupJob.GetRestorePoints().Count);
-            Assert.AreEqual(3, repo.GetStorages().Length);
+            restorePoint1.Restore(new DirectoryInfo($"tmp{Sep}data"));
+
+            Assert.AreEqual("Test content", File.ReadAllText($"tmp{Sep}data{Sep}tmp.txt"));
         }
 
         [Test]
-        public void TestLocalRepo()
+        public void TestSaveLoadBackupContext()
         {
+            var contextCreated = new Context($"tmp{Sep}workdir");
+
             IRepository repo = new RepositoryLocal($"tmp{Sep}repo");
 
             var backupJob = new BackupJob(repo);
+            contextCreated.AddBackupJob(backupJob);
             var jobObject1 = new JobObjectLocal($"tmp{Sep}data", "file1.txt");
             var jobObject2 = new JobObjectLocal($"tmp{Sep}data", "file2.txt");
 
             backupJob.Add(jobObject1);
             backupJob.Add(jobObject2);
-            RestorePoint restorePoint1 = backupJob.CreateRestorePoint();
+            backupJob.CreateRestorePoint();
 
-            Assert.AreEqual(true, File.Exists($"tmp{Sep}repo{Sep}{restorePoint1.Storages[0].Id}"));
+            contextCreated.Save();
+
+            var contextLoaded = new Context($"tmp{Sep}workdir");
+
+            BackupJob[] backupJobsSaved = contextCreated.BackupJobs().ToArray();
+            BackupJob[] backupJobsLoaded = contextLoaded.BackupJobs().ToArray();
+
+            Assert.AreEqual(backupJobsSaved.Length, backupJobsLoaded.Length);
+
+            for (int i = 0; i < backupJobsSaved.Length; i++)
+            {
+                Assert.AreEqual(backupJobsSaved[i], backupJobsLoaded[i]);
+            }
         }
 
         [Test]
@@ -107,7 +126,7 @@ namespace Backups.Tests
             DeleteDirRecursively(new DirectoryInfo("tmp"));
         }
 
-        private static void DeleteDirRecursively(DirectoryInfo dir)
+        public static void DeleteDirRecursively(DirectoryInfo dir)
         {
             foreach (FileSystemInfo enumerateFileSystemInfo in dir.EnumerateFileSystemInfos())
             {

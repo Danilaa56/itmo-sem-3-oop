@@ -1,25 +1,78 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Text.Json;
+using System.IO;
+using System.Linq;
+using Backups.Entities.ObjectDistributor;
+using Backups.Entities.Repository;
+using Backups.Entities.StoragePacker;
 
 namespace Backups.Entities
 {
     public class RestorePoint
     {
-        public RestorePoint(long creationDateUtc, ICollection<string> storageIds)
+        public RestorePoint(
+            long creationDateUtc,
+            IEnumerable<Storage> storages,
+            IObjectDistributor objectDistributor,
+            IStoragePacker storagePacker,
+            IRepository repository)
         {
             CreationDateUtc = creationDateUtc;
-            if (storageIds is null) throw new ArgumentNullException(nameof(storageIds));
-            StorageIds = storageIds.ToImmutableArray();
+            if (storages is null) throw new ArgumentNullException(nameof(storages));
+            Storages = storages.ToImmutableList();
+            ObjectDistributor = objectDistributor ?? throw new ArgumentNullException(nameof(objectDistributor));
+            StoragePacker = storagePacker ?? throw new ArgumentNullException(nameof(storagePacker));
+            Repository = repository ?? throw new ArgumentNullException(nameof(repository));
         }
 
         public long CreationDateUtc { get; }
-        public ImmutableArray<string> StorageIds { get; }
+        public ImmutableList<Storage> Storages { get; }
+        public IObjectDistributor ObjectDistributor { get; }
+        public IStoragePacker StoragePacker { get; }
+        public IRepository Repository { get; }
 
-        public override string ToString()
+        public void Restore(DirectoryInfo destination)
         {
-            return JsonSerializer.Serialize(this);
+            if (destination is null)
+                throw new ArgumentNullException(nameof(destination));
+
+            Storages
+                .Select(storage => Repository.ReadStorage(storage.Id))
+                .Select(storageBytes => StoragePacker.Unpack(storageBytes))
+                .Select(storageBlank => storageBlank.JobObjects)
+                .SelectMany(jobObjects => jobObjects).ToList()
+                .ForEach(jobObject =>
+                {
+                    var fileInfo = new FileInfo(destination + Path.DirectorySeparatorChar.ToString() +
+                                                jobObject.BackupObject.Name);
+                    if (fileInfo.Directory is not null)
+                        fileInfo.Directory.Create();
+                    File.WriteAllBytes(
+                        fileInfo.FullName,
+                        jobObject.GetData());
+                });
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            if (obj.GetType() != GetType()) return false;
+            return Equals((RestorePoint)obj);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(CreationDateUtc, Storages, ObjectDistributor, StoragePacker);
+        }
+
+        protected bool Equals(RestorePoint other)
+        {
+            return CreationDateUtc == other.CreationDateUtc
+                   && Storages.SequenceEqual(other.Storages)
+                   && ObjectDistributor.Equals(other.ObjectDistributor)
+                   && StoragePacker.Equals(other.StoragePacker);
         }
     }
 }

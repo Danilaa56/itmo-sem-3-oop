@@ -38,6 +38,7 @@ namespace BackupsExtra
             {
                 TypeNameHandling = TypeNameHandling.All,
                 Formatting = Formatting.Indented,
+                PreserveReferencesHandling = PreserveReferencesHandling.All,
             });
             File.WriteAllText(_workDirectoryPath + ConfigurationFileName, json);
         }
@@ -47,10 +48,12 @@ namespace BackupsExtra
             if (File.Exists(_workDirectoryPath + ConfigurationFileName))
             {
                 string jsonConfiguration = File.ReadAllText(_workDirectoryPath + ConfigurationFileName);
-                _backupJobs = JsonConvert.DeserializeObject<List<BackupJob>>(jsonConfiguration,
+                _backupJobs = JsonConvert.DeserializeObject<List<BackupJob>>(
+                    jsonConfiguration,
                     new JsonSerializerSettings
                     {
                         TypeNameHandling = TypeNameHandling.All,
+                        PreserveReferencesHandling = PreserveReferencesHandling.All,
                     });
             }
             else

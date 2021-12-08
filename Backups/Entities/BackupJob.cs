@@ -13,7 +13,7 @@ namespace Backups.Entities
 {
     public class BackupJob
     {
-        private HashSet<IJobObject> _jobObjects = new ();
+        private readonly HashSet<IJobObject> _jobObjects = new ();
         private List<RestorePoint> _restorePoints = new ();
 
         private IObjectDistributor _objectDistributor = new SingleStorageDistributor();
@@ -34,7 +34,7 @@ namespace Backups.Entities
             IRepository repository)
         {
             if (jobObjects is null) throw new ArgumentNullException(nameof(jobObjects));
-            _jobObjects = new HashSet<IJobObject>(jobObjects);
+            _jobObjects = jobObjects.ToHashSet();
             if (restorePoints is null) throw new ArgumentNullException(nameof(restorePoints));
             _restorePoints = new List<RestorePoint>(restorePoints);
             ObjectDistributor = objectDistributor;
@@ -119,6 +119,11 @@ namespace Backups.Entities
             if (ReferenceEquals(this, obj)) return true;
             if (obj.GetType() != GetType()) return false;
             return Equals((BackupJob)obj);
+        }
+
+        public override int GetHashCode()
+        {
+            return _jobObjects.GetHashCode();
         }
 
         protected bool Equals(BackupJob other)

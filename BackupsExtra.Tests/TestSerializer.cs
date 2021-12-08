@@ -97,10 +97,9 @@ namespace BackupsExtra.Tests
         [Test]
         public void SerializeBackupJobTest()
         {
-            var repo = new RepositoryLocal("tmp");
+            var repo = new RepositoryMock();
             var backupJob = new BackupJob(repo);
-            File.WriteAllBytes("tmp" + Path.PathSeparator + "fileName", new byte[] { 1, 2, 3 });
-            backupJob.Add(new JobObjectLocal("tmp", "fileName"));
+            backupJob.Add(new JobObjectInMemory(new byte[] { 1, 2, 3 }, "fileName"));
             backupJob.CreateRestorePoint();
 
             TrySerialize(backupJob);

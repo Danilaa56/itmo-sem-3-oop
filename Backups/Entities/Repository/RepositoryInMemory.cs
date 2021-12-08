@@ -75,7 +75,17 @@ namespace Backups.Entities.Repository
 
         protected bool Equals(RepositoryInMemory other)
         {
-            return _storages.SequenceEqual(other._storages);
+            foreach (var storageNode in _storages)
+            {
+                string storageId = storageNode.Key;
+                byte[] data = storageNode.Value;
+                if (!other._storages.TryGetValue(storageId, out byte[] value))
+                    return false;
+                if (!value.SequenceEqual(data))
+                    return false;
+            }
+
+            return true;
         }
     }
 }

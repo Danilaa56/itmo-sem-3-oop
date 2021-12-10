@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
+using Backups.Entities.DataObjects;
 using Backups.Entities.ObjectDistributor;
 using Backups.Entities.Repository;
 using Backups.Entities.StoragePacker;
@@ -32,7 +33,7 @@ namespace Backups.Entities
         public IStoragePacker StoragePacker { get; }
         public IRepository Repository { get; }
 
-        public void Restore(DirectoryInfo destination)
+        public void Restore(string destination)
         {
             if (destination is null)
                 throw new ArgumentNullException(nameof(destination));
@@ -40,18 +41,8 @@ namespace Backups.Entities
             Storages
                 .Select(storage => Repository.ReadStorage(storage.Id))
                 .Select(storageBytes => StoragePacker.Unpack(storageBytes))
-                .Select(storageBlank => storageBlank.JobObjects)
-                .SelectMany(jobObjects => jobObjects).ToList()
-                .ForEach(jobObject =>
-                {
-                    var fileInfo = new FileInfo(destination + Path.DirectorySeparatorChar.ToString() +
-                                                jobObject.BackupObject.Name);
-                    if (fileInfo.Directory is not null)
-                        fileInfo.Directory.Create();
-                    File.WriteAllBytes(
-                        fileInfo.FullName,
-                        jobObject.GetData());
-                });
+                .SelectMany(storageBlank => storageBlank.JobObjects).ToList()
+                .ForEach(jobObject => WriteJobObject(jobObject, destination));
         }
 
         public override bool Equals(object obj)
@@ -73,6 +64,14 @@ namespace Backups.Entities
                    && Storages.SequenceEqual(other.Storages)
                    && ObjectDistributor.Equals(other.ObjectDistributor)
                    && StoragePacker.Equals(other.StoragePacker);
+        }
+
+        private void WriteJobObject(IJobObject jobObject, string destination)
+        {
+            var fileInfo = new FileInfo(Path.Combine(destination, jobObject.BackupObject.Name));
+            if (fileInfo.Directory is not null)
+                fileInfo.Directory.Create();
+            File.WriteAllBytes(fileInfo.FullName, jobObject.GetData());
         }
     }
 }

@@ -108,9 +108,8 @@ namespace BackupsExtra.Tests
         [TearDown]
         public void TearDown()
         {
-            var tmpDir = new DirectoryInfo("tmp");
-            if (tmpDir.Exists)
-                Tests.DeleteDirRecursively(tmpDir);
+            if(Directory.Exists("tmp"))
+                Directory.Delete("tmp", true);
         }
 
         private void TrySerialize<T>(T obj)

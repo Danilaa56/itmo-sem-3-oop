@@ -50,7 +50,7 @@ namespace Backups.Entities.StoragePacker
 
         public override int GetHashCode()
         {
-            throw new System.NotImplementedException();
+            return 0;
         }
 
         protected bool Equals(ZipStoragePacker other)

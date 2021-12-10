@@ -12,34 +12,32 @@ namespace Backups.Tests
     [TestFixture]
     public class Tests
     {
-        private static readonly char Sep = Path.DirectorySeparatorChar;
-
         [SetUp]
         public void Setup()
         {
-            Directory.CreateDirectory($"tmp{Sep}data");
-            Directory.CreateDirectory($"tmp{Sep}repo");
+            Directory.CreateDirectory(Path.Combine("tmp", "data"));
+            Directory.CreateDirectory(Path.Combine("tmp", "repo"));
 
-            File.WriteAllText($"tmp{Sep}data{Sep}file1.txt", "Hello 1");
-            File.WriteAllText($"tmp{Sep}data{Sep}file2.txt", "Hello 2 and longer");
+            File.WriteAllText(Path.Combine("tmp", "data", "file1.txt"), "Hello 1");
+            File.WriteAllText(Path.Combine("tmp", "data", "file2.txt"), "Hello 2 and longer");
         }
 
         [Test]
         public void TestBackupJob()
         {
-            IRepository repo = new RepositoryLocal($"tmp{Sep}repo");
+            IRepository repo = new RepositoryLocal(Path.Combine("tmp", "repo"));
 
             var backupJob = new BackupJob(repo);
             backupJob.ObjectDistributor = new SplitStorageDistributor();
-            var jobObject1 = new JobObjectLocal($"tmp{Sep}data", "file1.txt");
-            var jobObject2 = new JobObjectLocal($"tmp{Sep}data", "file2.txt");
+            var jobObject1 = new JobObjectLocal(Path.Combine("tmp", "data"), "file1.txt");
+            var jobObject2 = new JobObjectLocal(Path.Combine("tmp", "data"), "file2.txt");
 
             backupJob.Add(jobObject1);
             backupJob.Add(jobObject2);
-            RestorePoint restorePoint1 = backupJob.CreateRestorePoint();
+            backupJob.CreateRestorePoint();
 
             backupJob.Remove(jobObject1);
-            RestorePoint restorePoint2 = backupJob.CreateRestorePoint();
+            backupJob.CreateRestorePoint();
 
             Assert.AreEqual(2, backupJob.GetRestorePoints().Count);
             Assert.AreEqual(3, repo.GetStorages().Length);
@@ -48,49 +46,49 @@ namespace Backups.Tests
         [Test]
         public void TestLocalRepo()
         {
-            IRepository repo = new RepositoryLocal($"tmp{Sep}repo");
+            IRepository repo = new RepositoryLocal(Path.Combine("tmp", "repo"));
 
             var backupJob = new BackupJob(repo);
-            var jobObject1 = new JobObjectLocal($"tmp{Sep}data", "file1.txt");
-            var jobObject2 = new JobObjectLocal($"tmp{Sep}data", "file2.txt");
+            var jobObject1 = new JobObjectLocal(Path.Combine("tmp", "data"), "file1.txt");
+            var jobObject2 = new JobObjectLocal(Path.Combine("tmp", "data"), "file2.txt");
 
             backupJob.Add(jobObject1);
             backupJob.Add(jobObject2);
             RestorePoint restorePoint1 = backupJob.CreateRestorePoint();
 
-            Assert.AreEqual(true, File.Exists($"tmp{Sep}repo{Sep}{restorePoint1.Storages[0].Id}"));
+            Assert.AreEqual(true, File.Exists(Path.Combine("tmp", "repo", restorePoint1.Storages[0].Id)));
         }
 
         [Test]
         public void TestRemoteRepo()
         {
-            var server = new RepositoryRemoteServer(8080, $"tmp{Sep}repo");
+            var server = new RepositoryRemoteServer(8080, Path.Combine("tmp", "repo"));
             server.Start();
 
             IRepository repo = new RepositoryRemote("localhost", 8080);
 
             var backupJob = new BackupJob(repo);
-            var jobObject1 = new JobObjectLocal($"tmp{Sep}data", "file1.txt");
-            var jobObject2 = new JobObjectLocal($"tmp{Sep}data", "file2.txt");
+            var jobObject1 = new JobObjectLocal(Path.Combine("tmp", "data"), "file1.txt");
+            var jobObject2 = new JobObjectLocal(Path.Combine("tmp", "data"), "file2.txt");
 
             backupJob.Add(jobObject1);
             backupJob.Add(jobObject2);
             RestorePoint restorePoint1 = backupJob.CreateRestorePoint();
 
-            Assert.AreEqual(true, File.Exists($"tmp{Sep}repo{Sep}{restorePoint1.Storages[0].Id}"));
+            Assert.AreEqual(true, File.Exists(Path.Combine("tmp", "repo", restorePoint1.Storages[0].Id)));
         }
 
         [Test]
         public void TestRemoteGetStorageIds()
         {
-            var server = new RepositoryRemoteServer(8080, $"tmp{Sep}repo");
+            var server = new RepositoryRemoteServer(8080, Path.Combine("tmp", "repo"));
             server.Start();
 
             IRepository repo = new RepositoryRemote("localhost", 8080);
 
             var backupJob = new BackupJob(repo);
-            var jobObject1 = new JobObjectLocal($"tmp{Sep}data", "file1.txt");
-            var jobObject2 = new JobObjectLocal($"tmp{Sep}data", "file2.txt");
+            var jobObject1 = new JobObjectLocal(Path.Combine("tmp", "data"), "file1.txt");
+            var jobObject2 = new JobObjectLocal(Path.Combine("tmp", "data"), "file2.txt");
 
             backupJob.Add(jobObject1);
             backupJob.Add(jobObject2);
@@ -104,20 +102,7 @@ namespace Backups.Tests
         [TearDown]
         public void TearDown()
         {
-            DeleteDirRecursively(new DirectoryInfo("tmp"));
-        }
-
-        private static void DeleteDirRecursively(DirectoryInfo dir)
-        {
-            foreach (FileSystemInfo enumerateFileSystemInfo in dir.EnumerateFileSystemInfos())
-            {
-                if (enumerateFileSystemInfo is DirectoryInfo info)
-                    DeleteDirRecursively(info);
-                else
-                    enumerateFileSystemInfo.Delete();
-            }
-
-            dir.Delete();
+            Directory.Delete("tmp", true);
         }
     }
 }

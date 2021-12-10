@@ -30,16 +30,13 @@ namespace Backups.Entities.Repository
         {
             try
             {
-                var tcpClient = new TcpClient(Address, Port);
-                NetworkStream stream = tcpClient.GetStream();
+                using var tcpClient = new TcpClient(Address, Port);
+                using NetworkStream stream = tcpClient.GetStream();
 
                 stream.WriteAction(ActionCode.CreateStorage);
                 stream.WriteByteArray(data);
-                string storageId = stream.ReadString();
 
-                stream.Close();
-                tcpClient.Close();
-                return storageId;
+                return stream.ReadString();
             }
             catch (SocketException e)
             {
@@ -53,14 +50,11 @@ namespace Backups.Entities.Repository
                 throw new ArgumentNullException(nameof(storageId));
             try
             {
-                var tcpClient = new TcpClient(Address, Port);
-                NetworkStream stream = tcpClient.GetStream();
+                using var tcpClient = new TcpClient(Address, Port);
+                using NetworkStream stream = tcpClient.GetStream();
 
                 stream.WriteAction(ActionCode.RemoveStorage);
                 stream.WriteString(storageId);
-
-                stream.Close();
-                tcpClient.Close();
             }
             catch (SocketException e)
             {
@@ -72,16 +66,13 @@ namespace Backups.Entities.Repository
         {
             try
             {
-                var tcpClient = new TcpClient(Address, Port);
-                NetworkStream stream = tcpClient.GetStream();
+                using var tcpClient = new TcpClient(Address, Port);
+                using NetworkStream stream = tcpClient.GetStream();
 
                 stream.WriteAction(ActionCode.ReadStorage);
                 stream.WriteString(storageId);
-                byte[] storageContent = stream.ReadByteArray();
 
-                stream.Close();
-                tcpClient.Close();
-                return storageContent;
+                return stream.ReadByteArray();
             }
             catch (SocketException e)
             {
@@ -93,16 +84,12 @@ namespace Backups.Entities.Repository
         {
             try
             {
-                var tcpClient = new TcpClient(Address, Port);
-                NetworkStream stream = tcpClient.GetStream();
+                using var tcpClient = new TcpClient(Address, Port);
+                using NetworkStream stream = tcpClient.GetStream();
 
                 stream.WriteAction(ActionCode.GetStorages);
 
-                ImmutableArray<string> storageIds = stream.ReadStringList();
-
-                stream.Close();
-                tcpClient.Close();
-                return storageIds;
+                return stream.ReadStringList();
             }
             catch (SocketException e)
             {

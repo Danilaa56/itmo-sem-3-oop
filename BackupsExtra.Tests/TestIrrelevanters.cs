@@ -14,8 +14,6 @@ namespace BackupsExtra.Tests
     [TestFixture]
     public class TestIrrelevanters
     {
-        private static readonly string Sep = Path.DirectorySeparatorChar.ToString();
-
         private RepositoryLocal _localRepo;
         private SingleStorageDistributor _distributor;
         private ZipStoragePacker _packer;
@@ -23,8 +21,7 @@ namespace BackupsExtra.Tests
         [SetUp]
         public void Setup()
         {
-            Directory.CreateDirectory($"tmp{Sep}repo");
-            _localRepo = new RepositoryLocal($"tmp{Sep}repo");
+            _localRepo = new RepositoryLocal(Path.Combine("tmp", "repo"));
             _distributor = new SingleStorageDistributor();
             _packer = new ZipStoragePacker();
         }
@@ -104,7 +101,7 @@ namespace BackupsExtra.Tests
         [TearDown]
         public void TearDown()
         {
-            Tests.DeleteDirRecursively(new DirectoryInfo("tmp"));
+            Directory.Delete("tmp", true);
         }
     }
 }

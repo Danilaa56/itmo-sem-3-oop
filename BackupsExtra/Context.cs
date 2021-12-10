@@ -11,14 +11,14 @@ namespace BackupsExtra
     {
         private const string ConfigurationFileName = "backups.conf.json";
 
-        private readonly string _workDirectoryPath;
+        private readonly string _configurationFilePath;
 
         private List<BackupJob> _backupJobs;
 
         public Context(string path)
         {
             DirectoryInfo workDirectory = Directory.CreateDirectory(path);
-            _workDirectoryPath = workDirectory + Path.DirectorySeparatorChar.ToString();
+            _configurationFilePath = Path.Combine(workDirectory.FullName, ConfigurationFileName);
             Load();
         }
 
@@ -40,14 +40,14 @@ namespace BackupsExtra
                 Formatting = Formatting.Indented,
                 PreserveReferencesHandling = PreserveReferencesHandling.All,
             });
-            File.WriteAllText(_workDirectoryPath + ConfigurationFileName, json);
+            File.WriteAllText(_configurationFilePath, json);
         }
 
         private void Load()
         {
-            if (File.Exists(_workDirectoryPath + ConfigurationFileName))
+            if (File.Exists(_configurationFilePath))
             {
-                string jsonConfiguration = File.ReadAllText(_workDirectoryPath + ConfigurationFileName);
+                string jsonConfiguration = File.ReadAllText(_configurationFilePath);
                 _backupJobs = JsonConvert.DeserializeObject<List<BackupJob>>(
                     jsonConfiguration,
                     new JsonSerializerSettings

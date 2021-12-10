@@ -81,5 +81,20 @@ namespace Backups.Tools
             foreach (string str in strings)
                 WriteString(stream, str);
         }
+
+        public static byte[] ReadAllBytes(this Stream stream)
+        {
+            using (var ms = new MemoryStream())
+            {
+                byte[] buffer = new byte[8192];
+                int length;
+                while ((length = stream.Read(buffer)) > 0)
+                {
+                    ms.Write(buffer, 0, length);
+                }
+
+                return ms.ToArray();
+            }
+        }
     }
 }

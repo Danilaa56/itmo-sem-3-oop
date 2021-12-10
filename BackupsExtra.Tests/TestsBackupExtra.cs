@@ -1,13 +1,14 @@
-﻿using System.IO;
+using System.IO;
 using System.Linq;
 using Backups.Entities;
 using Backups.Entities.DataObjects;
 using Backups.Entities.ObjectDistributor;
 using Backups.Entities.Repository;
 using Backups.Server.Entities;
+using BackupsExtra.Entities;
 using NUnit.Framework;
 
-namespace Backups.Tests
+namespace BackupsExtra.Tests
 {
     [TestFixture]
     public class Tests
@@ -23,40 +24,54 @@ namespace Backups.Tests
         }
 
         [Test]
-        public void TestBackupJob()
+        public void TestRestore()
         {
             IRepository repo = new RepositoryLocal(Path.Combine("tmp", "repo"));
 
-            var backupJob = new BackupJob(repo);
+            File.WriteAllText(Path.Combine("tmp", "data", "tmp.txt"), "Test content");
+
+            var backupJob = new BackupJobExtra(repo);
             backupJob.ObjectDistributor = new SplitStorageDistributor();
-            var jobObject1 = new JobObjectLocal(Path.Combine("tmp", "data"), "file1.txt");
-            var jobObject2 = new JobObjectLocal(Path.Combine("tmp", "data"), "file2.txt");
-
+            var jobObject1 = new JobObjectLocal(Path.Combine("tmp", "data"), "tmp.txt");
             backupJob.Add(jobObject1);
-            backupJob.Add(jobObject2);
-            backupJob.CreateRestorePoint();
+            RestorePoint restorePoint1 = backupJob.CreateRestorePoint();
 
-            backupJob.Remove(jobObject1);
-            backupJob.CreateRestorePoint();
+            File.Delete(Path.Combine("tmp", "data", "tmp.txt"));
 
-            Assert.AreEqual(2, backupJob.GetRestorePoints().Count);
-            Assert.AreEqual(3, repo.GetStorages().Length);
+            restorePoint1.Restore(Path.Combine("tmp", "data"));
+
+            Assert.AreEqual("Test content", File.ReadAllText(Path.Combine("tmp", "data", "tmp.txt")));
         }
 
         [Test]
-        public void TestLocalRepo()
+        public void TestSaveLoadBackupContext()
         {
+            var contextCreated = new Context(Path.Combine("tmp", "workdir"));
+
             IRepository repo = new RepositoryLocal(Path.Combine("tmp", "repo"));
 
             var backupJob = new BackupJob(repo);
+            contextCreated.AddBackupJob(backupJob);
             var jobObject1 = new JobObjectLocal(Path.Combine("tmp", "data"), "file1.txt");
             var jobObject2 = new JobObjectLocal(Path.Combine("tmp", "data"), "file2.txt");
 
             backupJob.Add(jobObject1);
             backupJob.Add(jobObject2);
-            RestorePoint restorePoint1 = backupJob.CreateRestorePoint();
+            backupJob.CreateRestorePoint();
 
-            Assert.AreEqual(true, File.Exists(Path.Combine("tmp", "repo", restorePoint1.Storages[0].Id)));
+            contextCreated.Save();
+
+            var contextLoaded = new Context(Path.Combine("tmp", "workdir"));
+
+            BackupJob[] backupJobsSaved = contextCreated.BackupJobs().ToArray();
+            BackupJob[] backupJobsLoaded = contextLoaded.BackupJobs().ToArray();
+
+            Assert.AreEqual(backupJobsSaved.Length, backupJobsLoaded.Length);
+
+            for (int i = 0; i < backupJobsSaved.Length; i++)
+            {
+                Assert.AreEqual(backupJobsSaved[i], backupJobsLoaded[i]);
+            }
         }
 
         [Test]

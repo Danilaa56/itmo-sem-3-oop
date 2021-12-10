@@ -2,35 +2,41 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
+using System.Linq;
+using System.Text.Json.Serialization;
 using Backups.Tools;
 
 namespace Backups.Entities.Repository
 {
     public class RepositoryLocal : IRepository
     {
-        private readonly DirectoryInfo _dirInfo;
-        private readonly List<string> _storages = new List<string>();
-
         public RepositoryLocal(string path)
         {
-            _dirInfo = new DirectoryInfo(path ?? throw new ArgumentNullException(nameof(path)));
-            if (!_dirInfo.Exists)
+            Path = path ?? throw new ArgumentNullException(nameof(path));
+            if (!Directory.Exists(Path))
             {
                 try
                 {
-                    _dirInfo.Create();
+                    Directory.CreateDirectory(Path);
                 }
                 catch (IOException e)
                 {
                     throw new BackupException("Failed to create dir for repository", e);
                 }
             }
-
-            foreach (FileInfo enumerateFile in _dirInfo.EnumerateFiles())
-            {
-                File.Delete(enumerateFile.FullName);
-            }
         }
+
+        [JsonConstructor]
+        private RepositoryLocal(string path, List<string> storages)
+            : this(path)
+        {
+            if (storages is null)
+                throw new ArgumentNullException(nameof(storages));
+            Storages = new List<string>(storages);
+        }
+
+        public string Path { get; init; }
+        public List<string> Storages { get; init; } = new ();
 
         public string CreateStorage(byte[] data)
         {
@@ -39,18 +45,54 @@ namespace Backups.Entities.Repository
             do
             {
                 storageId = StringUtils.RandomHexString(16);
-                fullName = _dirInfo + "/" + storageId;
+                fullName = Path + System.IO.Path.DirectorySeparatorChar.ToString() + storageId;
             }
             while (File.Exists(fullName));
 
             File.WriteAllBytes(fullName, data);
-            _storages.Add(storageId);
+            Storages.Add(storageId);
             return storageId;
+        }
+
+        public void RemoveStorage(string storageId)
+        {
+            if (storageId is null)
+                throw new ArgumentNullException(nameof(storageId));
+            if (!Storages.Remove(storageId))
+                throw new BackupException("There is no storage with such storage id");
+            File.Delete(Path + System.IO.Path.DirectorySeparatorChar.ToString() + storageId);
+        }
+
+        public byte[] ReadStorage(string storageId)
+        {
+            if (storageId is null)
+                throw new ArgumentNullException(nameof(storageId));
+            if (!Storages.Contains(storageId))
+                throw new BackupException("There is no storage with such storage id");
+            return File.ReadAllBytes(Path + System.IO.Path.DirectorySeparatorChar.ToString() + storageId);
         }
 
         public ImmutableArray<string> GetStorages()
         {
-            return _storages.ToImmutableArray();
+            return Storages.ToImmutableArray();
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            if (obj.GetType() != GetType()) return false;
+            return Equals((RepositoryLocal)obj);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Path, Storages);
+        }
+
+        protected bool Equals(RepositoryLocal other)
+        {
+            return Equals(Path, other.Path) && Storages.SequenceEqual(other.Storages);
         }
     }
 }

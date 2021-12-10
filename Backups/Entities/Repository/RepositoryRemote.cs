@@ -19,6 +19,8 @@ namespace Backups.Entities.Repository
         {
             CreateStorage = 0,
             GetStorages = 1,
+            RemoveStorage = 2,
+            ReadStorage = 3,
         }
 
         public string Address { get; }
@@ -28,16 +30,13 @@ namespace Backups.Entities.Repository
         {
             try
             {
-                var tcpClient = new TcpClient(Address, Port);
-                NetworkStream stream = tcpClient.GetStream();
+                using var tcpClient = new TcpClient(Address, Port);
+                using NetworkStream stream = tcpClient.GetStream();
 
                 stream.WriteAction(ActionCode.CreateStorage);
                 stream.WriteByteArray(data);
-                string storageId = stream.ReadString();
 
-                stream.Close();
-                tcpClient.Close();
-                return storageId;
+                return stream.ReadString();
             }
             catch (SocketException e)
             {
@@ -45,25 +44,75 @@ namespace Backups.Entities.Repository
             }
         }
 
-        public ImmutableArray<string> GetStorages()
+        public void RemoveStorage(string storageId)
+        {
+            if (storageId is null)
+                throw new ArgumentNullException(nameof(storageId));
+            try
+            {
+                using var tcpClient = new TcpClient(Address, Port);
+                using NetworkStream stream = tcpClient.GetStream();
+
+                stream.WriteAction(ActionCode.RemoveStorage);
+                stream.WriteString(storageId);
+            }
+            catch (SocketException e)
+            {
+                throw new BackupException("Failed to remove storage from the remote repo", e);
+            }
+        }
+
+        public byte[] ReadStorage(string storageId)
         {
             try
             {
-                var tcpClient = new TcpClient(Address, Port);
-                NetworkStream stream = tcpClient.GetStream();
+                using var tcpClient = new TcpClient(Address, Port);
+                using NetworkStream stream = tcpClient.GetStream();
 
-                stream.WriteAction(ActionCode.GetStorages);
+                stream.WriteAction(ActionCode.ReadStorage);
+                stream.WriteString(storageId);
 
-                ImmutableArray<string> storageIds = stream.ReadStringList();
-
-                stream.Close();
-                tcpClient.Close();
-                return storageIds;
+                return stream.ReadByteArray();
             }
             catch (SocketException e)
             {
                 throw new BackupException("Failed get storages list from the remote repo", e);
             }
+        }
+
+        public ImmutableArray<string> GetStorages()
+        {
+            try
+            {
+                using var tcpClient = new TcpClient(Address, Port);
+                using NetworkStream stream = tcpClient.GetStream();
+
+                stream.WriteAction(ActionCode.GetStorages);
+
+                return stream.ReadStringList();
+            }
+            catch (SocketException e)
+            {
+                throw new BackupException("Failed get storages list from the remote repo", e);
+            }
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            if (obj.GetType() != GetType()) return false;
+            return Equals((RepositoryRemote)obj);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Address, Port);
+        }
+
+        protected bool Equals(RepositoryRemote other)
+        {
+            return Address == other.Address && Port == other.Port;
         }
     }
 }

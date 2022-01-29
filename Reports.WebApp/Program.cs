@@ -29,28 +29,54 @@ namespace Reports.WebApp
 
                 context.Database.EnsureDeleted();
                 context.Database.EnsureCreated();
-                context.Persons.Add(new Person()
+                Person person = new Person()
                 {
                     Id = new Guid(56, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
                     Name = "PersonName",
                     Surname = "Surname",
                     Password = "qwe",
                     Username = "qwe"
+                };
+                context.Persons.Add(person);
+                context.Problems.Add(new Problem()
+                {
+                    Title = "Title 1",
+                    Author = person,
+                    Content = "Description for the first problem",
+                    Created = DateTime.Now,
+                    Updated = DateTime.Now
+                });
+                context.Problems.Add(new Problem()
+                {
+                    Title = "Title 2 but it is very long (or not)",
+                    Author = person,
+                    Content = "Description for the second problem",
+                    Created = DateTime.Now,
+                    Updated = DateTime.Now
+                });
+                context.Problems.Add(new Problem()
+                {
+                    Title = "Title 3",
+                    Author = person,
+                    Executor = person,
+                    Content = "Description for the third problem",
+                    Created = DateTime.Now,
+                    Updated = DateTime.Now
                 });
                 context.SaveChanges();
-                
-                
             }
             catch (Exception ex)
             {
                 ILogger<Program> logger = services.GetRequiredService<ILogger<Program>>();
                 logger.LogError(ex, "An error occurred creating the DB.");
+                logger.LogError(ex.StackTrace);
             }
         }
 
         private static IHostBuilder CreateHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)
-                .ConfigureWebHostDefaults(webBuilder => {
+                .ConfigureWebHostDefaults(webBuilder =>
+                {
                     webBuilder.UseStartup<Startup>();
                 });
     }

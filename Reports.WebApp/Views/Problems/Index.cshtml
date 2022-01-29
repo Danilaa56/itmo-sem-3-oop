@@ -1,0 +1,47 @@
+﻿@using Reports.Core.Entities
+@{
+    ViewData["Title"] = "Problems";
+    IEnumerable<Problem> problems = ViewBag.Problems;
+}
+
+<div>
+    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5cm">
+        <div>
+            <h4 class="display-6">Problems list</h4>
+        </div>
+        <div style="margin-top: auto; margin-bottom: auto;">
+            <a class="display-6 btn btn-primary" asp-area="" asp-controller="Problems" asp-action="Create">Create new Problem!</a>
+        </div>
+    </div>
+    <table style="border: solid lightgray 2px;border-radius: 0.2cm;text-align: left;">
+        <thead>
+        <th>Title</th>
+        <th>Created</th>
+        <th>Updated</th>
+        <th>State</th>
+        <th>Author</th>
+        <th>Executor</th>
+        </thead>
+        <tbody>
+        @foreach (var problem in problems)
+        {
+            <tr>
+                <td>
+                    <a class="text-dark" href="/Problems/View/@problem.Id">
+                        @problem.Title
+                    </a>
+                </td>
+                <td>@problem.Created</td>
+                <td>@problem.Updated</td>
+                <td>@problem.State</td>
+                <td>
+                    <partial name="_PersonLink" model="@problem.Executor"/>
+                </td>
+                <td>
+                    <partial name="_PersonLink" model="problem.Author"/>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>

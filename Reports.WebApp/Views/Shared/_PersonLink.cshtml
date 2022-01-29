@@ -1,0 +1,11 @@
+﻿@model Reports.Core.Entities.Person
+@{
+    if (Model is null)
+    {
+        await Output.WriteAsync("Not set");
+    }
+    else
+    {
+        <a class="text-dark" href="">@Model.Name @Model.Surname</a>
+    }
+}

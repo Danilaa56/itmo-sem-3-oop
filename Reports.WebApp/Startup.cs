@@ -30,6 +30,7 @@ namespace Reports.WebApp
 
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<IPersonService, PersonService>();
+            services.AddScoped<IProblemService, ProblemService>();
 
             services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
                 .AddCookie(options =>

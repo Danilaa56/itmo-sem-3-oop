@@ -70,5 +70,41 @@ namespace Reports.WebAPI.Controllers
         {
             return _historyService.GetHistory(id).Select(HistoryRecordModel.ToModel);
         }
+
+        [HttpGet("FindByTimeCreated")]
+        public IEnumerable<ProblemModel> FindByTimeCreated(DateTime since, DateTime upto)
+        {
+            return _problemService.FindProblemsCreatedInPeriod(since, upto).Select(ProblemModel.ToModel);
+        }
+
+        [HttpGet("FindByTimeUpdated")]
+        public IEnumerable<ProblemModel> FindByTimeUpdated(DateTime since, DateTime upto)
+        {
+            return _problemService.FindProblemsUpdatedInPeriod(since, upto).Select(ProblemModel.ToModel);
+        }
+
+        [HttpGet("FindByExecutor")]
+        public IEnumerable<ProblemModel> FindByTimeCreated(Guid executorId)
+        {
+            return _problemService.FindProblemsByExecutor(executorId).Select(ProblemModel.ToModel);
+        }
+
+        [HttpGet("FindByPersonEdited")]
+        public IEnumerable<ProblemModel> FindByPersonEdited(Guid personId)
+        {
+            return _problemService.FindByPersonEdited(personId).Select(ProblemModel.ToModel);
+        }
+
+        [HttpGet("FindByExecutorDirector")]
+        public IEnumerable<ProblemModel> FindByExecutorDirector(Guid directorId)
+        {
+            return _problemService.FindProblemsByExecutorDirector(directorId).Select(ProblemModel.ToModel);
+        }
+
+        [HttpGet("FindBySprint")]
+        public IEnumerable<ProblemModel> FindBySprint(Guid sprintId)
+        {
+            return _problemService.FindProblemsBySprint(sprintId).Select(ProblemModel.ToModel);
+        }
     }
 }

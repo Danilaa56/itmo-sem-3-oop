@@ -48,63 +48,54 @@ namespace Reports.Infra.Services
 
         public Problem GetProblemById(Guid id)
         {
-            return _context.Problems
-                       .Include(problem => problem.Sprint)
-                       .Include(problem => problem.Author)
-                       .Include(problem => problem.Executor)
-                       .Include(problem => problem.Comments)
-                       .FirstOrDefault(problem => id.Equals(problem.Id))
+            return Problems().FirstOrDefault(problem => id.Equals(problem.Id))
                    ?? throw new ArgumentException($"There is no problem with id {id}");
         }
 
         public IEnumerable<Problem> GetProblemsList()
         {
-            return _context.Problems
-                .Include(problem => problem.Sprint)
-                .Include(problem => problem.Author)
-                .Include(problem => problem.Executor)
-                .Include(problem => problem.Comments)
-                .ToList();
+            return Problems().ToList();
         }
 
         public IEnumerable<Problem> FindProblemsCreatedInPeriod(DateTime since, DateTime upto)
         {
-            return _context.Problems
-                .Include(problem => problem.Executor)
+            return Problems()
                 .Where(problem => problem.Created >= since && problem.Created < upto)
                 .ToList();
         }
 
         public IEnumerable<Problem> FindProblemsUpdatedInPeriod(DateTime since, DateTime upto)
         {
-            return _context.Problems
-                .Include(problem => problem.Executor)
+            return Problems()
                 .Where(problem => problem.Updated >= since && problem.Updated < upto)
                 .ToList();
         }
 
         public IEnumerable<Problem> FindProblemsByExecutor(Guid executorId)
         {
-            return _context.Problems
-                .Include(problem => problem.Executor)
+            return Problems()
                 .Where(problem => problem.Executor != null && problem.Executor.Id.Equals(executorId))
                 .ToList();
         }
 
+        public IEnumerable<Problem> FindByPersonEdited(Guid personId)
+        {
+            var problemIds = _context.History
+                .Where(record => record.ActorId.Equals(personId))
+                .Select(record => record.AffectedId).ToHashSet();
+            return Problems().Where(problem => problemIds.Contains(problem.Id));
+        }
+
         public IEnumerable<Problem> FindProblemsByExecutorDirector(Guid directorId)
         {
-            return _context.Problems
-                .Include(problem => problem.Executor)
+            return Problems()
                 .Where(problem => problem.Executor != null && problem.Executor.Director != null && problem.Executor.Director.Id.Equals(directorId))
                 .ToList();
         }
 
         public IEnumerable<Problem> FindProblemsBySprint(Guid sprintId)
         {
-            return _context.Problems
-                .Include(problem => problem.Author)
-                .Include(problem => problem.Executor)
-                .Include(problem => problem.Sprint)
+            return Problems()
                 .Where(problem => problem.Sprint.Id.Equals(sprintId))
                 .ToList();
         }
@@ -193,6 +184,15 @@ namespace Reports.Infra.Services
         {
             return _context.Comments.FirstOrDefault(comment => comment.Id.Equals(id))
                    ?? throw new ArgumentException($"There is no comment with id {id}");
+        }
+
+        private IQueryable<Problem> Problems()
+        {
+            return _context.Problems
+                .Include(problem => problem.Author)
+                .Include(problem => problem.Executor)
+                .Include(problem => problem.Sprint)
+                .Include(problem => problem.Comments);
         }
     }
 }

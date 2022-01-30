@@ -12,6 +12,7 @@ namespace Reports.Core.Services
         IEnumerable<Problem> FindProblemsCreatedInPeriod(DateTime since, DateTime upto);
         IEnumerable<Problem> FindProblemsUpdatedInPeriod(DateTime since, DateTime upto);
         IEnumerable<Problem> FindProblemsByExecutor(Guid executorId);
+        IEnumerable<Problem> FindByPersonEdited(Guid personId);
         IEnumerable<Problem> FindProblemsByExecutorDirector(Guid directorId);
         IEnumerable<Problem> FindProblemsBySprint(Guid sprintId);
         void EditProblem(Guid problemId, string newTitle, string newContent, Guid newSprintId, Person actor);

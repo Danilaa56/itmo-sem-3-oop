@@ -36,8 +36,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Backups.Server", "Backups.S
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Reports.Core", "Reports.Core\Reports.Core.csproj", "{2EF8060B-9488-458D-9FE8-A7F386C653EC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Reports.WebApp", "Reports.WebApp\Reports.WebApp.csproj", "{0FDB4B4A-4F52-478E-84E2-38B67DB253AB}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Reports.Infra", "Reports.Infra\Reports.Infra.csproj", "{5981EAE1-D9B8-4B82-BF38-7EE0CF0223BC}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Reports.WebAPI", "Reports.WebAPI\Reports.WebAPI.csproj", "{5B66D210-968F-4324-9333-DE16C073DACF}"
@@ -104,10 +102,6 @@ Global
 		{2EF8060B-9488-458D-9FE8-A7F386C653EC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2EF8060B-9488-458D-9FE8-A7F386C653EC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2EF8060B-9488-458D-9FE8-A7F386C653EC}.Release|Any CPU.Build.0 = Release|Any CPU
-		{0FDB4B4A-4F52-478E-84E2-38B67DB253AB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{0FDB4B4A-4F52-478E-84E2-38B67DB253AB}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{0FDB4B4A-4F52-478E-84E2-38B67DB253AB}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{0FDB4B4A-4F52-478E-84E2-38B67DB253AB}.Release|Any CPU.Build.0 = Release|Any CPU
 		{5981EAE1-D9B8-4B82-BF38-7EE0CF0223BC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{5981EAE1-D9B8-4B82-BF38-7EE0CF0223BC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5981EAE1-D9B8-4B82-BF38-7EE0CF0223BC}.Release|Any CPU.ActiveCfg = Release|Any CPU

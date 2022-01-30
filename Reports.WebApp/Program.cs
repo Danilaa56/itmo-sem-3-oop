@@ -38,10 +38,18 @@ namespace Reports.WebApp
                     Username = "qwe"
                 };
                 context.Persons.Add(person);
+                Sprint sprint = new Sprint()
+                {
+                    Name = "Test sprint",
+                    Start = DateTime.Now,
+                    Finish = DateTime.Now.AddDays(1)
+                };
+                context.Sprints.Add(sprint);
                 context.Problems.Add(new Problem()
                 {
                     Title = "Title 1",
                     Author = person,
+                    Sprint = sprint,
                     Content = "Description for the first problem",
                     Created = DateTime.Now,
                     Updated = DateTime.Now
@@ -50,6 +58,7 @@ namespace Reports.WebApp
                 {
                     Title = "Title 2 but it is very long (or not)",
                     Author = person,
+                    Sprint = sprint,
                     Content = "Description for the second problem",
                     Created = DateTime.Now,
                     Updated = DateTime.Now
@@ -58,6 +67,7 @@ namespace Reports.WebApp
                 {
                     Title = "Title 3",
                     Author = person,
+                    Sprint = sprint,
                     Executor = person,
                     Content = "Description for the third problem",
                     Created = DateTime.Now,

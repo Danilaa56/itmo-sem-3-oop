@@ -12,16 +12,19 @@ namespace Reports.Infra.Services
     {
         private readonly ReportsContext _context;
         private readonly IPersonService _personService;
+        private readonly ISprintService _sprintService;
 
-        public ProblemService(ReportsContext context, IPersonService personService)
+        public ProblemService(ReportsContext context, IPersonService personService, ISprintService sprintService)
         {
             _context = context;
             _personService = personService;
+            _sprintService = sprintService;
         }
 
-        public Guid CreateProblem(string title, string content, Guid authorId)
+        public Guid CreateProblem(string title, string content, Guid authorId, Guid sprintId)
         {
             Person author = _personService.GetPersonById(authorId);
+            Sprint sprint = _sprintService.GetSprintById(sprintId);
             DateTime now = DateTime.Now;
 
             Problem problem = new Problem()
@@ -29,6 +32,7 @@ namespace Reports.Infra.Services
                 Title = title,
                 Content = content,
                 Author = author,
+                Sprint = sprint,
                 Created = now,
                 Updated = now,
                 State = Problem.ProblemState.Open
@@ -88,6 +92,16 @@ namespace Reports.Infra.Services
                 .ToList();
         }
 
+        public IEnumerable<Problem> FindProblemsBySprint(Guid sprintId)
+        {
+            return _context.Problems
+                .Include(problem => problem.Author)
+                .Include(problem => problem.Executor)
+                .Include(problem => problem.Sprint)
+                .Where(problem => problem.Sprint.Id.Equals(sprintId))
+                .ToList();
+        }
+
         public void EditProblem(Guid problemId, string newTitle, string newContent)
         {
             Problem problem = GetProblemById(problemId);
@@ -97,7 +111,7 @@ namespace Reports.Infra.Services
             _context.Problems.Update(problem);
             _context.SaveChanges();
         }
-        
+
         public void SetState(Guid problemId, Problem.ProblemState state)
         {
             Problem problem = GetProblemById(problemId);

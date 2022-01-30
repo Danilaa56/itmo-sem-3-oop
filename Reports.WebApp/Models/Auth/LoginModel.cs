@@ -5,8 +5,8 @@ namespace Reports.WebApp.Models.Auth
     public class LoginModel
     {
         [DataType(DataType.Text)]
-        public string Username { get; set; }
+        public string Username { get; set; } = null!;
         [DataType(DataType.Password)]
-        public string Password { get; set; }
+        public string Password { get; set; } = null!;
     }
 }

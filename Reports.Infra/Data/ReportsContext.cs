@@ -14,6 +14,7 @@ namespace Reports.Infra.Data
         public DbSet<Person> Persons { get; set; } = null!;
         public DbSet<Problem> Problems { get; set; } = null!;
         public DbSet<Comment> Comments { get; set; } = null!;
+        public DbSet<Sprint> Sprints { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

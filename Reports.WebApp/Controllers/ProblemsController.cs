@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Reports.Core.Entities;
@@ -72,11 +70,11 @@ namespace Reports.WebApp.Controllers
             {
                 var authorId = Guid.Parse(User.Identity!.Name!);
                 model.Content = model.Content.ReplaceLineEndings("\n");
-                Guid problemId = _problemService.CreateProblem(model.Title, model.Content, authorId);
+                Guid problemId = _problemService.CreateProblem(model.Title, model.Content, authorId, Guid.Parse(model.SprintId));
 
                 return RedirectToAction("View", new {id = problemId});
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 return View();
             }

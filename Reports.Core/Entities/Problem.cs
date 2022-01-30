@@ -8,7 +8,7 @@ namespace Reports.Core.Entities
         public Guid Id { get; set; }
         public string Title { get; set; }
         public string Content { get; set; }
-        // public Sprint Sprint { get; set; }
+        public Sprint Sprint { get; set; }
         public ProblemState State { get; set; }
         public List<Comment> Comments { get; set; }
         public DateTime Created { get; set; }

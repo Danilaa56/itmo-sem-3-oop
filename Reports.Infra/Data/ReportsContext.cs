@@ -17,6 +17,7 @@ namespace Reports.Infra.Data
         public DbSet<Sprint> Sprints { get; set; } = null!;
         public DbSet<Token> Tokens { get; set; } = null!;
         public DbSet<HistoryRecord> History { get; set; } = null!;
+        public DbSet<Report> Reports { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

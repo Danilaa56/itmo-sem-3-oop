@@ -31,6 +31,7 @@ namespace Reports.WebAPI
             services.AddScoped<ISprintService, SprintService>();
             services.AddScoped<IHistoryService, HistoryService>();
             services.AddScoped<IProblemService, ProblemService>();
+            services.AddScoped<IReportService, ReportService>();
 
             services.AddControllers();
             services.AddEndpointsApiExplorer();

@@ -29,6 +29,7 @@ namespace Reports.WebAPI
                 IProblemService problemService = services.GetRequiredService<IProblemService>();
                 ISprintService sprintService = services.GetRequiredService<ISprintService>();
                 IAuthService authService = services.GetRequiredService<IAuthService>();
+                IReportService reportService = services.GetRequiredService<IReportService>();
 
                 context.Database.EnsureDeleted();
                 context.Database.EnsureCreated();
@@ -46,6 +47,8 @@ namespace Reports.WebAPI
                 Guid problem3 = problemService.CreateProblem("Title 3", "Description for the third problem", sprintId, actor);
                 problemService.SetExecutor(problem3, personId, actor);
                 problemService.AddComment(problem2, "Test comment", actor);
+
+                Guid reportId = reportService.InitReport(sprintId, actor);
             }
             catch (Exception ex)
             {

@@ -29,7 +29,8 @@ namespace Reports.Infra.Services
                 {
                     Id = id,
                     KeyWord = keyWord,
-                    TokenValue = Guid.NewGuid()
+                    TokenValue = new Guid(56, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+                    // TokenValue = Guid.NewGuid()
                 };
                 _context.Tokens.Add(token);
             }

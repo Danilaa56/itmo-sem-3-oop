@@ -4,6 +4,7 @@ using System.Linq;
 using Reports.Core.Entities;
 using Reports.Core.Services;
 using Reports.Infra.Data;
+using Reports.Infra.Tools;
 
 namespace Reports.Infra.Services
 {
@@ -16,12 +17,31 @@ namespace Reports.Infra.Services
             _context = context;
         }
 
-        public Guid CreatePerson(string name, string surname)
+        public Guid CreatePersonTeamLeader(string name, string surname)
         {
+            if (_context.Persons.Any())
+            {
+                throw new ReportException("There can be only one team leader");
+            }
+
             Person person = new ()
             {
                 Name = name,
-                Surname = surname
+                Surname = surname,
+            };
+            _context.Persons.Add(person);
+            _context.SaveChanges();
+            return person.Id;
+        }
+
+        public Guid CreatePerson(string name, string surname, Guid directorId)
+        {
+            Person director = GetPersonById(directorId);
+            Person person = new ()
+            {
+                Name = name,
+                Surname = surname,
+                Director = director,
             };
             _context.Persons.Add(person);
             _context.SaveChanges();
@@ -44,8 +64,16 @@ namespace Reports.Infra.Services
 
         public void SetDirector(Guid personId, Guid directorId)
         {
+            if (personId == directorId)
+            {
+                throw new ReportException("Worker cannot be his/her director");
+            }
             Person person = GetPersonById(personId);
-            person.Director = directorId == Guid.Empty ? null : GetPersonById(directorId);
+            Person director = GetPersonById(directorId);
+            if (!OneCanBeDirectorOfOther(director, person))
+            {
+                throw new ReportException("Cyclic depends");
+            }
             _context.Persons.Update(person);
             _context.SaveChanges();
         }
@@ -57,16 +85,24 @@ namespace Reports.Infra.Services
                 .ToList();
         }
 
-        public void DeletePerson(Guid id)
-        {
-            _context.Persons.Remove(GetPersonById(id));
-            _context.SaveChanges();
-        }
-
         public Person GetPersonById(Guid id)
         {
             return _context.Persons.FirstOrDefault(person => id.Equals(person.Id))
                    ?? throw new ArgumentException($"There is no person with id {id}");
+        }
+
+        private bool OneCanBeDirectorOfOther(Person director, Person person)
+        {
+            Person? tmp = director;
+            while (tmp != null)
+            {
+                tmp = tmp.Director;
+                if (tmp == person)
+                {
+                    return false;
+                }
+            }
+            return true;
         }
     }
 }

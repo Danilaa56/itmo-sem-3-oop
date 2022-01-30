@@ -6,8 +6,8 @@ namespace Reports.Core.Services
 {
     public interface IPersonService
     {
-        Guid CreatePerson(string name, string surname);
-        void DeletePerson(Guid id);
+        Guid CreatePersonTeamLeader(string name, string surname);
+        Guid CreatePerson(string name, string surname, Guid directorId);
         Person GetPersonById(Guid id);
         IEnumerable<Person> GetPersonsList();
         void EditPerson(Guid personId, string newName, string newSurname);

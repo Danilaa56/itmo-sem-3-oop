@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.AspNetCore.Mvc;
+using Reports.Core.Entities;
 using Reports.Core.Services;
 using Reports.WebAPI.Models;
 
@@ -37,16 +38,22 @@ namespace Reports.WebAPI.Controllers
             return _personService.GetWorkers(directorId).Select(PersonModel.ToModel);
         }
 
-        [HttpPost]
-        public Guid Create(string name, string surname)
+        [HttpPost("/createTeamLeader")]
+        public Guid CreateTeamLeader(string name, string surname)
         {
-            return _personService.CreatePerson(name, surname);
+            return _personService.CreatePersonTeamLeader(name, surname);
+        }
+
+        [HttpPost]
+        public Guid Create(string name, string surname, Guid directorId)
+        {
+            return _personService.CreatePerson(name, surname, directorId);
         }
 
         [HttpPut("{id}")]
-        public Guid Edit(Guid id, string name, string surname)
+        public void Edit(Guid id, string name, string surname)
         {
-            return _personService.CreatePerson(name, surname);
+            _personService.EditPerson(id, name, surname);
         }
 
         [HttpPut("{id}/setDirector")]
@@ -55,10 +62,37 @@ namespace Reports.WebAPI.Controllers
             _personService.SetDirector(workerId, directorId);
         }
 
-        [HttpDelete("{id}")]
-        public void Delete(Guid id)
+        [HttpGet("getHierarchy")]
+        public HierarchyElement GetHierarchy()
         {
-            _personService.DeletePerson(id);
+            Dictionary<Guid, HierarchyElement> personsMap = new Dictionary<Guid, HierarchyElement>();
+            List<Person> persons = _personService.GetPersonsList().ToList();
+
+            foreach (Person person in persons)
+            {
+                personsMap[person.Id] = new HierarchyElement
+                {
+                    Id = person.Id,
+                    Name = person.Name,
+                    Surname = person.Surname,
+                    Workers = new List<HierarchyElement>()
+                };
+            }
+
+            HierarchyElement? teamLead = null;
+            foreach (Person person in persons)
+            {
+                if (person.Director is null)
+                {
+                    teamLead = personsMap[person.Id];
+                }
+                else
+                {
+                    personsMap[person.Director.Id].Workers.Add(personsMap[person.Id]);
+                }
+            }
+
+            return teamLead!;
         }
     }
 }

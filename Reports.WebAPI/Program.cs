@@ -34,21 +34,27 @@ namespace Reports.WebAPI
                 context.Database.EnsureDeleted();
                 context.Database.EnsureCreated();
 
-                Guid personId = personService.CreatePerson("John", "Snow");
-                Guid token = authService.CreateToken(personId, "MyQWERTYPassword");
-                Person actor = authService.PersonByToken(token);
+                Guid teamLeadId = personService.CreatePersonTeamLeader("John", "Snow");
+                Guid worker1Id = personService.CreatePerson("Worker", "Of John", teamLeadId);
+                Guid worker2Id = personService.CreatePerson("Worker 2", "Of John", teamLeadId);
+                Guid worker11Id = personService.CreatePerson("Worker 1", "true 1", worker1Id);
+
+                Guid token = authService.CreateToken(teamLeadId, "MyQWERTYPassword");
+                Person johnSnow = authService.PersonByToken(token);
                 Guid sprintId = sprintService.CreateSprint("Test sprint", DateTime.Now, DateTime.Now.AddDays(1));
 
-                Guid problem1 = problemService.CreateProblem("Title 1", "Description for the first problem", sprintId, actor);
+                Guid problem1 = problemService.CreateProblem("Title 1", "Description for the first problem", sprintId, johnSnow);
                 Guid problem2 = problemService.CreateProblem("Title 2 but it is very long (or not)",
                 "Description for the second problem",
                 sprintId,
-                actor);
-                Guid problem3 = problemService.CreateProblem("Title 3", "Description for the third problem", sprintId, actor);
-                problemService.SetExecutor(problem3, personId, actor);
-                problemService.AddComment(problem2, "Test comment", actor);
+                johnSnow);
+                Guid problem3 = problemService.CreateProblem("Title 3", "Description for the third problem", sprintId, johnSnow);
+                problemService.SetExecutor(problem3, teamLeadId, johnSnow);
+                problemService.AddComment(problem2, "Test comment", johnSnow);
 
-                Guid reportId = reportService.InitReport(sprintId, actor);
+                Guid reportId = reportService.InitReport(sprintId, johnSnow);
+                reportService.LinkProblem(reportId, problem1, johnSnow);
+                reportService.LinkProblem(reportId, problem2, johnSnow);
             }
             catch (Exception ex)
             {

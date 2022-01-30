@@ -13,12 +13,14 @@ namespace Reports.WebAPI.Controllers
     public class ProblemController : ControllerBase
     {
         private readonly IAuthService _authService;
+        private readonly IHistoryService _historyService;
         private readonly IProblemService _problemService;
 
-        public ProblemController(IProblemService problemService, IAuthService authService)
+        public ProblemController(IProblemService problemService, IAuthService authService, IHistoryService historyService)
         {
             _problemService = problemService;
             _authService = authService;
+            _historyService = historyService;
         }
 
         [HttpGet]
@@ -61,6 +63,12 @@ namespace Reports.WebAPI.Controllers
         public void AddComment(Guid id, Guid authorId, string content, Guid token)
         {
             _problemService.AddComment(id, content, _authService.PersonByToken(token));
+        }
+
+        [HttpGet("{id}/getHistory")]
+        public IEnumerable<HistoryRecordModel> GetHistory(Guid id)
+        {
+            return _historyService.GetHistory(id).Select(HistoryRecordModel.ToModel);
         }
     }
 }

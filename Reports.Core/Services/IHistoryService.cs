@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Reports.Core.Entities;
 
 namespace Reports.Core.Services
@@ -11,5 +12,6 @@ namespace Reports.Core.Services
         void AddedComment(Guid problemId, Guid actor);
         void EditedComment(Guid problemId, Guid actor);
         void SetExecutor(Guid problemId, Guid actor, Guid executor);
+        IEnumerable<HistoryRecord> GetHistory(Guid problemId);
     }
 }

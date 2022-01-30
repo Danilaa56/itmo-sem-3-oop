@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using Reports.Core.Entities;
 using Reports.Core.Services;
 using Reports.Infra.Data;
@@ -54,6 +56,13 @@ namespace Reports.Infra.Services
             HistoryRecord historyRecord = Blank(problemId, actor);
             historyRecord.Type = HistoryRecord.RecordType.SetExecutor;
             AddAndSave(historyRecord);
+        }
+
+        public IEnumerable<HistoryRecord> GetHistory(Guid problemId)
+        {
+            return _context.History
+                .Where(historyRecord => historyRecord.AffectedId.Equals(problemId))
+                .ToList();
         }
 
         private HistoryRecord Blank(Guid problemId, Guid actorId)

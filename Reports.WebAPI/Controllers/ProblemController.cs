@@ -51,6 +51,12 @@ namespace Reports.WebAPI.Controllers
             _problemService.SetState(id, state, _authService.PersonByToken(token));
         }
 
+        [HttpPut("{id}/setExecutor")]
+        public void SetExecutor(Guid id, Guid executorId, Guid token)
+        {
+            _problemService.SetExecutor(id, executorId, _authService.PersonByToken(token));
+        }
+
         [HttpPost("{id}/addComment")]
         public void AddComment(Guid id, Guid authorId, string content, Guid token)
         {

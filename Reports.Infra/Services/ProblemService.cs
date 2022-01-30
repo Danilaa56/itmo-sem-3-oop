@@ -11,19 +11,20 @@ namespace Reports.Infra.Services
     public class ProblemService : IProblemService
     {
         private readonly ReportsContext _context;
+        private readonly IHistoryService _historyService;
         private readonly IPersonService _personService;
         private readonly ISprintService _sprintService;
 
-        public ProblemService(ReportsContext context, IPersonService personService, ISprintService sprintService)
+        public ProblemService(ReportsContext context, IPersonService personService, ISprintService sprintService, IHistoryService historyService)
         {
             _context = context;
             _personService = personService;
             _sprintService = sprintService;
+            _historyService = historyService;
         }
 
-        public Guid CreateProblem(string title, string content, Guid authorId, Guid sprintId)
+        public Guid CreateProblem(string title, string content, Guid sprintId, Person actor)
         {
-            Person author = _personService.GetPersonById(authorId);
             Sprint sprint = _sprintService.GetSprintById(sprintId);
             DateTime now = DateTime.Now;
 
@@ -34,13 +35,14 @@ namespace Reports.Infra.Services
                 Sprint = sprint,
                 Created = now,
                 Updated = now,
-                Author = author,
+                Author = actor,
                 Comments = new List<Comment>(),
                 State = Problem.ProblemState.Open
             };
 
             _context.Problems.Add(problem);
             _context.SaveChanges();
+            _historyService.CreatedProblem(problem.Id, actor.Id);
             return problem.Id;
         }
 
@@ -107,45 +109,56 @@ namespace Reports.Infra.Services
                 .ToList();
         }
 
-        public void EditProblem(Guid problemId, string newTitle, string newContent, Guid newSprintId)
+        public void EditProblem(Guid problemId, string newTitle, string newContent, Guid newSprintId, Person actor)
         {
             Problem problem = GetProblemById(problemId);
             Sprint sprint = _sprintService.GetSprintById(newSprintId);
+
             problem.Title = newTitle;
             problem.Content = newContent;
-            problem.Updated = DateTime.Now;
             problem.Sprint = sprint;
+            problem.Updated = DateTime.Now;
+
             _context.Problems.Update(problem);
             _context.SaveChanges();
+
+            _historyService.EditedProblem(problemId, actor.Id);
         }
 
-        public void SetState(Guid problemId, Problem.ProblemState state)
+        public void SetState(Guid problemId, Problem.ProblemState state, Person actor)
         {
             Problem problem = GetProblemById(problemId);
+
             problem.State = state;
             problem.Updated = DateTime.Now;
+
             _context.Problems.Update(problem);
             _context.SaveChanges();
+
+            _historyService.SetProblemState(problemId, actor.Id, state);
         }
 
-        public void SetExecutor(Guid problemId, Guid personId)
+        public void SetExecutor(Guid problemId, Guid personId, Person actor)
         {
             Problem problem = GetProblemById(problemId);
             Person person = _personService.GetPersonById(personId);
+
             problem.Executor = person;
             problem.Updated = DateTime.Now;
+
             _context.Update(person);
             _context.SaveChanges();
+
+            _historyService.SetExecutor(problemId, actor.Id, personId);
         }
 
-        public void WriteComment(Guid problemId, Guid authorId, string content)
+        public void AddComment(Guid problemId, string content, Person actor)
         {
             Problem problem = GetProblemById(problemId);
-            Person author = _personService.GetPersonById(authorId);
             DateTime now = DateTime.Now;
             Comment comment = new ()
             {
-                Author = author,
+                Author = actor,
                 Content = content,
                 Created = now,
                 Updated = now,
@@ -153,11 +166,14 @@ namespace Reports.Infra.Services
             _context.Comments.Add(comment);
             problem.Comments.Add(comment);
             problem.Updated = now;
+
             _context.Problems.Update(problem);
             _context.SaveChanges();
+
+            _historyService.AddedComment(problemId, actor.Id);
         }
 
-        public void EditComment(Guid problemId, Guid commentId, string newContent)
+        public void EditComment(Guid problemId, Guid commentId, string newContent, Person actor)
         {
             Problem problem = GetProblemById(problemId);
             Comment comment = GetCommentById(commentId);
@@ -169,6 +185,8 @@ namespace Reports.Infra.Services
             problem.Updated = now;
             _context.Problems.Update(problem);
             _context.SaveChanges();
+
+            _historyService.EditedComment(problemId, actor.Id);
         }
 
         private Comment GetCommentById(Guid id)

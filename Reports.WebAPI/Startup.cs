@@ -26,9 +26,10 @@ namespace Reports.WebAPI
                                       ?? throw new Exception("DB Connection string is null");
             services.AddDbContext<ReportsContext>(options => options.UseSqlite(connectionString));
 
-            services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<IPersonService, PersonService>();
+            services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<ISprintService, SprintService>();
+            services.AddScoped<IHistoryService, HistoryService>();
             services.AddScoped<IProblemService, ProblemService>();
 
             services.AddControllers();

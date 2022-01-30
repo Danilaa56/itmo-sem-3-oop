@@ -16,6 +16,18 @@ namespace Reports.Infra.Services
             _context = context;
         }
 
+        public Guid CreatePerson(string name, string surname)
+        {
+            Person person = new ()
+            {
+                Name = name,
+                Surname = surname
+            };
+            _context.Persons.Add(person);
+            _context.SaveChanges();
+            return person.Id;
+        }
+
         public IEnumerable<Person> GetPersonsList()
         {
             return _context.Persons.ToList();
@@ -28,6 +40,21 @@ namespace Reports.Infra.Services
             person.Surname = newSurname;
             _context.Persons.Update(person);
             _context.SaveChanges();
+        }
+
+        public void SetDirector(Guid personId, Guid directorId)
+        {
+            Person person = GetPersonById(personId);
+            person.Director = directorId == Guid.Empty ? null : GetPersonById(directorId);
+            _context.Persons.Update(person);
+            _context.SaveChanges();
+        }
+
+        public IEnumerable<Person> GetWorkers(Guid directorId)
+        {
+            return _context.Persons
+                .Where(person => person.Director != null && person.Director.Id.Equals(directorId))
+                .ToList();
         }
 
         public void DeletePerson(Guid id)

@@ -28,29 +28,24 @@ namespace Reports.WebAPI
                 IPersonService personService = services.GetRequiredService<IPersonService>();
                 IProblemService problemService = services.GetRequiredService<IProblemService>();
                 ISprintService sprintService = services.GetRequiredService<ISprintService>();
+                IAuthService authService = services.GetRequiredService<IAuthService>();
 
                 context.Database.EnsureDeleted();
                 context.Database.EnsureCreated();
-                Person person = new Person()
-                {
-                    Id = new Guid(56, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
-                    Name = "John",
-                    Surname = "Snow",
-                    Password = "qwe",
-                    Username = "qwe",
-                };
-                context.Persons.Add(person);
-                context.SaveChanges();
+
+                Guid personId = personService.CreatePerson("John", "Snow");
+                Guid token = authService.CreateToken(personId, "MyQWERTYPassword");
+                Person actor = authService.PersonByToken(token);
                 Guid sprintId = sprintService.CreateSprint("Test sprint", DateTime.Now, DateTime.Now.AddDays(1));
 
-                Guid problem1 = problemService.CreateProblem("Title 1", "Description for the first problem", person.Id, sprintId);
+                Guid problem1 = problemService.CreateProblem("Title 1", "Description for the first problem", sprintId, actor);
                 Guid problem2 = problemService.CreateProblem("Title 2 but it is very long (or not)",
                 "Description for the second problem",
-                person.Id,
-                sprintId);
-                Guid problem3 = problemService.CreateProblem("Title 3", "Description for the third problem", person.Id, sprintId);
-                problemService.SetExecutor(problem3, person.Id);
-                problemService.WriteComment(problem2, person.Id, "Test comment");
+                sprintId,
+                actor);
+                Guid problem3 = problemService.CreateProblem("Title 3", "Description for the third problem", sprintId, actor);
+                problemService.SetExecutor(problem3, personId, actor);
+                problemService.AddComment(problem2, "Test comment", actor);
             }
             catch (Exception ex)
             {

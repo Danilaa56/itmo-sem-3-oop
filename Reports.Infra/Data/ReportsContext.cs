@@ -15,12 +15,14 @@ namespace Reports.Infra.Data
         public DbSet<Problem> Problems { get; set; } = null!;
         public DbSet<Comment> Comments { get; set; } = null!;
         public DbSet<Sprint> Sprints { get; set; } = null!;
+        public DbSet<Token> Tokens { get; set; } = null!;
+        public DbSet<HistoryRecord> History { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Problem>().Property(problem => problem.State)
                 .HasConversion(new EnumToStringConverter<Problem.ProblemState>());
-            
+
             base.OnModelCreating(modelBuilder);
         }
     }

@@ -12,11 +12,13 @@ namespace Reports.WebAPI.Controllers
     [Route("[controller]")]
     public class ProblemController : ControllerBase
     {
+        private readonly IAuthService _authService;
         private readonly IProblemService _problemService;
 
-        public ProblemController(IProblemService problemService)
+        public ProblemController(IProblemService problemService, IAuthService authService)
         {
             _problemService = problemService;
+            _authService = authService;
         }
 
         [HttpGet]
@@ -32,27 +34,27 @@ namespace Reports.WebAPI.Controllers
         }
 
         [HttpPost]
-        public void CreateProblem(string title, string content, Guid sprintId, Guid authorId)
+        public void CreateProblem(string title, string content, Guid sprintId, Guid token)
         {
-            _problemService.CreateProblem(title, content, authorId, sprintId);
+            _problemService.CreateProblem(title, content, sprintId, _authService.PersonByToken(token));
         }
 
         [HttpPut("{id}")]
-        public void Edit(Guid id, string title, string content, Guid sprintId)
+        public void Edit(Guid id, string title, string content, Guid sprintId, Guid token)
         {
-            _problemService.EditProblem(id, title, content, sprintId);
+            _problemService.EditProblem(id, title, content, sprintId, _authService.PersonByToken(token));
         }
 
         [HttpPut("{id}/setState")]
-        public void SetState(Guid id, Problem.ProblemState state)
+        public void SetState(Guid id, Problem.ProblemState state, Guid token)
         {
-            _problemService.SetState(id, state);
+            _problemService.SetState(id, state, _authService.PersonByToken(token));
         }
 
         [HttpPost("{id}/addComment")]
-        public void AddComment(Guid id, Guid authorId, string content)
+        public void AddComment(Guid id, Guid authorId, string content, Guid token)
         {
-            _problemService.WriteComment(id, authorId, content);
+            _problemService.AddComment(id, content, _authService.PersonByToken(token));
         }
     }
 }

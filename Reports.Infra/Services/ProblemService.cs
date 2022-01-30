@@ -27,14 +27,15 @@ namespace Reports.Infra.Services
             Sprint sprint = _sprintService.GetSprintById(sprintId);
             DateTime now = DateTime.Now;
 
-            Problem problem = new Problem()
+            Problem problem = new ()
             {
                 Title = title,
                 Content = content,
-                Author = author,
                 Sprint = sprint,
                 Created = now,
                 Updated = now,
+                Author = author,
+                Comments = new List<Comment>(),
                 State = Problem.ProblemState.Open
             };
 
@@ -46,8 +47,10 @@ namespace Reports.Infra.Services
         public Problem GetProblemById(Guid id)
         {
             return _context.Problems
+                       .Include(problem => problem.Sprint)
                        .Include(problem => problem.Author)
                        .Include(problem => problem.Executor)
+                       .Include(problem => problem.Comments)
                        .FirstOrDefault(problem => id.Equals(problem.Id))
                    ?? throw new ArgumentException($"There is no problem with id {id}");
         }
@@ -55,8 +58,10 @@ namespace Reports.Infra.Services
         public IEnumerable<Problem> GetProblemsList()
         {
             return _context.Problems
+                .Include(problem => problem.Sprint)
                 .Include(problem => problem.Author)
                 .Include(problem => problem.Executor)
+                .Include(problem => problem.Comments)
                 .ToList();
         }
 
@@ -102,12 +107,14 @@ namespace Reports.Infra.Services
                 .ToList();
         }
 
-        public void EditProblem(Guid problemId, string newTitle, string newContent)
+        public void EditProblem(Guid problemId, string newTitle, string newContent, Guid newSprintId)
         {
             Problem problem = GetProblemById(problemId);
+            Sprint sprint = _sprintService.GetSprintById(newSprintId);
             problem.Title = newTitle;
             problem.Content = newContent;
             problem.Updated = DateTime.Now;
+            problem.Sprint = sprint;
             _context.Problems.Update(problem);
             _context.SaveChanges();
         }
@@ -136,7 +143,7 @@ namespace Reports.Infra.Services
             Problem problem = GetProblemById(problemId);
             Person author = _personService.GetPersonById(authorId);
             DateTime now = DateTime.Now;
-            Comment comment = new Comment()
+            Comment comment = new ()
             {
                 Author = author,
                 Content = content,
